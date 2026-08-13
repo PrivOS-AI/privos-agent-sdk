@@ -2,9 +2,12 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
-## [0.3.0-rc.0] — 2026-08-13
+## [0.3.0] — 2026-08-13
 
-First release of the PrivOS fork. Everything below `0.2.0` is upstream
+First stable release of the PrivOS fork, published from CI so the tarball
+carries npm provenance. `0.3.0-rc.0` was published from a workstation and has
+no attestation; it is otherwise this release without the name-collision fix
+below. Everything below `0.2.0` is upstream
 [skawld-sdk](https://github.com/skawld/skawld-sdk) history, kept verbatim.
 
 ### Added

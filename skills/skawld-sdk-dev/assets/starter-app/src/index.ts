@@ -12,10 +12,10 @@
  */
 
 import { createInterface } from "node:readline/promises";
-import { Agent } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
-import type { CanUseTool } from "@skawld/agent-sdk/permissions";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
+import type { CanUseTool } from "@privos_ai/privos-agent-sdk/permissions";
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error("Set ANTHROPIC_API_KEY first:  export ANTHROPIC_API_KEY=sk-ant-...");
@@ -37,7 +37,7 @@ const agent = new Agent({
   provider: new AnthropicProvider(),          // reads ANTHROPIC_API_KEY
   model: "claude-opus-4-5",
   // OpenAI instead:
-  //   import { OpenAIResponsesProvider } from "@skawld/agent-sdk/providers";
+  //   import { OpenAIResponsesProvider } from "@privos_ai/privos-agent-sdk/providers";
   //   provider: new OpenAIResponsesProvider({ reasoning: { effort: "medium" } }), model: "gpt-5",
   tools: defaultTools(),
   permissions: { mode: "default", canUseTool },   // write/exec tools ask; reads are free

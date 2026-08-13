@@ -1,4 +1,20 @@
-# Skawld Agent SDK
+# PrivOS Agent SDK
+
+A PrivOS-maintained fork of [skawld-sdk](https://github.com/skawld/skawld-sdk), published as
+`@privos_ai/privos-agent-sdk`. It carries two features that were needed downstream while the
+upstream pull requests waited for review, and is otherwise the upstream SDK: same runtime
+identifiers (`.skawld`, `SKAWLD_*`, `SkawldError`), same classes, exports and session format,
+so switching the import is the whole migration.
+
+- **`configDir` accepts an array** ([PR #1](https://github.com/skawld/skawld-sdk/pull/1)) — skills
+  and subagents load from several roots in first-directory-wins order. Passing a single string
+  behaves exactly as before.
+- **Tolerant SSE streaming** ([PR #2](https://github.com/skawld/skawld-sdk/pull/2)) — a malformed
+  frame mid-stream is repaired or dropped instead of aborting the whole run. Dropped frames are
+  surfaced to an optional observer, so a lossy stream is visible rather than silent.
+
+Lineage: upstream `7216fab` → PR #1 → PR #2. Upstream MIT licence and commit authorship are
+preserved; see [CHANGELOG.md](CHANGELOG.md).
 
 An open-source all-purpose TypeScript agent harness.
 Embed a full agent loop — tools, sessions, permissions, streaming events, subagents — into any Node.js or Bun application with a single import.
@@ -10,11 +26,11 @@ Runs on **Node.js 18+** and **Bun 1.1+**. ESM-only.
 ```sh
 # pick your package manager
 # Bun is reccomended
-bun add @skawld/agent-sdk
+bun add @privos_ai/privos-agent-sdk
 # npm is also supported
-npm install @skawld/agent-sdk
-pnpm add @skawld/agent-sdk
-yarn add @skawld/agent-sdk
+npm install @privos_ai/privos-agent-sdk
+pnpm add @privos_ai/privos-agent-sdk
+yarn add @privos_ai/privos-agent-sdk
 ```
 
 ---
@@ -22,9 +38,9 @@ yarn add @skawld/agent-sdk
 ## Minimal usage
 
 ```ts
-import { Agent } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({
   provider: new AnthropicProvider(),   // reads ANTHROPIC_API_KEY from env
@@ -78,16 +94,16 @@ On startup it prompts for a working directory (defaults to the current one), the
 
 | Provider class | Subpath | Environment variable |
 |---|---|---|
-| `AnthropicProvider` | `@skawld/agent-sdk/providers` | `ANTHROPIC_API_KEY` |
-| `OpenAIChatCompletionsProvider` | `@skawld/agent-sdk/providers` | `OPENAI_API_KEY` |
-| `OpenAIResponsesProvider` | `@skawld/agent-sdk/providers` | `OPENAI_API_KEY` |
+| `AnthropicProvider` | `@privos_ai/privos-agent-sdk/providers` | `ANTHROPIC_API_KEY` |
+| `OpenAIChatCompletionsProvider` | `@privos_ai/privos-agent-sdk/providers` | `OPENAI_API_KEY` |
+| `OpenAIResponsesProvider` | `@privos_ai/privos-agent-sdk/providers` | `OPENAI_API_KEY` |
 
 ```ts
 import {
   AnthropicProvider,
   OpenAIChatCompletionsProvider,
   OpenAIResponsesProvider,
-} from "@skawld/agent-sdk/providers";
+} from "@privos_ai/privos-agent-sdk/providers";
 ```
 
 ---
@@ -106,8 +122,8 @@ import {
 By default, sessions persist to SQLite at `.skawld/sessions.db`. For tests or embedded applications, pass a custom `sessionStore`, such as `InMemorySessionStore`.
 
 ```ts
-import { Agent } from "@skawld/agent-sdk";
-import { InMemorySessionStore } from "@skawld/agent-sdk/sessions";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { InMemorySessionStore } from "@privos_ai/privos-agent-sdk/sessions";
 
 const agent = new Agent({
   provider,
@@ -121,11 +137,11 @@ const agent = new Agent({
 ## Public API surface
 
 ```
-@skawld/agent-sdk             → Agent, Session, defaultTools, MCP helpers, core types, Event types, Error classes
-@skawld/agent-sdk/providers   → AnthropicProvider, OpenAIChatCompletionsProvider, OpenAIResponsesProvider, BaseProvider
-@skawld/agent-sdk/tools       → ToolRegistry, defaultTools, built-in tool classes, MCP tool helpers, task types
-@skawld/agent-sdk/sessions    → SqliteSessionStore, InMemorySessionStore, SessionStore and task persistence types
-@skawld/agent-sdk/permissions → PermissionEngine, permission callback types, permission rule types
+@privos_ai/privos-agent-sdk             → Agent, Session, defaultTools, MCP helpers, core types, Event types, Error classes
+@privos_ai/privos-agent-sdk/providers   → AnthropicProvider, OpenAIChatCompletionsProvider, OpenAIResponsesProvider, BaseProvider
+@privos_ai/privos-agent-sdk/tools       → ToolRegistry, defaultTools, built-in tool classes, MCP tool helpers, task types
+@privos_ai/privos-agent-sdk/sessions    → SqliteSessionStore, InMemorySessionStore, SessionStore and task persistence types
+@privos_ai/privos-agent-sdk/permissions → PermissionEngine, permission callback types, permission rule types
 ```
 
 ---

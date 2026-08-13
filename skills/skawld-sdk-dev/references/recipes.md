@@ -7,9 +7,9 @@ Copy-paste patterns. All imports are from the four public subpaths. Runnable exa
 ## 1. Stream assistant text + tool activity
 
 ```ts
-import { Agent } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({ provider: new AnthropicProvider(), model: "claude-opus-4-5", tools: defaultTools() });
 const session = await agent.session();
@@ -48,7 +48,7 @@ for await (const event of session.run(prompt)) {
 
 ```ts
 import { createInterface } from "node:readline/promises";
-import type { CanUseTool } from "@skawld/agent-sdk/permissions";
+import type { CanUseTool } from "@privos_ai/privos-agent-sdk/permissions";
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 const canUseTool: CanUseTool = async (req) => {
@@ -154,9 +154,9 @@ Mirrors `examples/interactive-cli.ts`. Note `permissions: { mode: "yolo" }` skip
 
 ```ts
 import { createInterface } from "node:readline/promises";
-import { Agent } from "@skawld/agent-sdk";
-import { OpenAIResponsesProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { OpenAIResponsesProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({
   provider: new OpenAIResponsesProvider({ apiKey: process.env.OPENAI_API_KEY!, reasoning: { effort: "medium" } }),
@@ -183,7 +183,7 @@ rl.close();
 ## 10. Handle errors & retries
 
 ```ts
-import { RateLimitError, ContextLengthError, AuthError } from "@skawld/agent-sdk";
+import { RateLimitError, ContextLengthError, AuthError } from "@privos_ai/privos-agent-sdk";
 
 try {
   for await (const e of session.run(prompt)) {
@@ -206,10 +206,10 @@ try {
 Drive the agent with a tiny scriptable `BaseProvider` + `InMemorySessionStore` — deterministic, offline, fast. Assert on the event stream.
 
 ```ts
-import { Agent } from "@skawld/agent-sdk";
-import { BaseProvider } from "@skawld/agent-sdk/providers";
-import type { ProviderRequest, ProviderStreamEvent } from "@skawld/agent-sdk/providers";
-import { InMemorySessionStore } from "@skawld/agent-sdk/sessions";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { BaseProvider } from "@privos_ai/privos-agent-sdk/providers";
+import type { ProviderRequest, ProviderStreamEvent } from "@privos_ai/privos-agent-sdk/providers";
+import { InMemorySessionStore } from "@privos_ai/privos-agent-sdk/sessions";
 
 class ScriptedProvider extends BaseProvider {
   readonly id = "scripted";
@@ -275,7 +275,7 @@ for await (const event of iter) {
 Wire `hooks` to gate/observe tool calls and `askUser` to let the model ask the user clarifying questions:
 
 ```ts
-import type { Hooks, AskUserHandler } from "@skawld/agent-sdk";
+import type { Hooks, AskUserHandler } from "@privos_ai/privos-agent-sdk";
 
 const hooks: Hooks = {
   preToolUse: [{

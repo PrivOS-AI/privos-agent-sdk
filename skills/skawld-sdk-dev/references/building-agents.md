@@ -41,7 +41,7 @@ Evaluated before the mode default; first match wins. Three rule kinds:
 Called only when a tool resolves to `"ask"`. It must return an allow/deny decision. This is where an embedding app prompts the user.
 
 ```ts
-import type { CanUseTool } from "@skawld/agent-sdk/permissions";
+import type { CanUseTool } from "@privos_ai/privos-agent-sdk/permissions";
 
 const canUseTool: CanUseTool = async (req, signal) => {
   // req: { tool_name, tool_use_id, input, summary, mode }
@@ -65,7 +65,7 @@ new Agent({ provider, model, permissions: { mode: "default", canUseTool } });
 Hooks are typed, in-process interception points the engine calls at five named moments. Pass them via `AgentOptions.hooks`; each event takes an array of registrations evaluated in order. Hooks are pure functions — no I/O assumptions — and must respect `ctx.signal`.
 
 ```ts
-import type { Hooks } from "@skawld/agent-sdk";
+import type { Hooks } from "@privos_ai/privos-agent-sdk";
 
 const hooks: Hooks = {
   preToolUse: [
@@ -121,7 +121,7 @@ Per-event semantics:
 By default sessions persist to SQLite at `.skawld/sessions.db` (created lazily on first `session()`). Override with `sessionStore`.
 
 ```ts
-import { InMemorySessionStore, SqliteSessionStore } from "@skawld/agent-sdk/sessions";
+import { InMemorySessionStore, SqliteSessionStore } from "@privos_ai/privos-agent-sdk/sessions";
 
 // Ephemeral (tests, stateless servers) — nothing touches disk.
 new Agent({ provider, model, sessionStore: new InMemorySessionStore() });
@@ -138,17 +138,17 @@ const s1 = await agent.session();
 const resumed = await agent.session({ id: s1.id });   // reloads persisted messages
 ```
 
-To implement a fully custom backend, implement the `SessionStore` interface (`create`, `loadMessages`, `appendMessages`, `updateMeta`, `close`, plus task-persistence methods) exported from `@skawld/agent-sdk/sessions`.
+To implement a fully custom backend, implement the `SessionStore` interface (`create`, `loadMessages`, `appendMessages`, `updateMeta`, `close`, plus task-persistence methods) exported from `@privos_ai/privos-agent-sdk/sessions`.
 
 ## Custom tools
 
 📖 Docs: https://skawld.com/docs/tools
 
-A tool implements the `Tool` interface (from `@skawld/agent-sdk/tools`). Register it on a `ToolRegistry` and pass that as `AgentOptions.tools`.
+A tool implements the `Tool` interface (from `@privos_ai/privos-agent-sdk/tools`). Register it on a `ToolRegistry` and pass that as `AgentOptions.tools`.
 
 ```ts
-import { defaultTools } from "@skawld/agent-sdk/tools";
-import type { Tool, ToolContext, ToolResult } from "@skawld/agent-sdk/tools";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
+import type { Tool, ToolContext, ToolResult } from "@privos_ai/privos-agent-sdk/tools";
 
 const WeatherTool: Tool<{ city: string }> = {
   name: "Weather",
@@ -191,7 +191,7 @@ Tool authoring rules:
 The `AskUser` tool lets the model pause mid-run to ask the user clarifying questions (ambiguous requirements, multiple valid approaches, missing context, risky choices). It is registered **only** when you pass an `askUser` handler in `AgentOptions` — the embedding app owns how the questions are presented.
 
 ```ts
-import type { AskUserHandler } from "@skawld/agent-sdk";
+import type { AskUserHandler } from "@privos_ai/privos-agent-sdk";
 
 const askUser: AskUserHandler = async (req, signal) => {
   // req: { tool_use_id, questions[] }
@@ -227,7 +227,7 @@ new Agent({
 });
 ```
 
-Config shape mirrors the Claude Agent SDK (`McpStdioServerConfig` | `McpHttpServerConfig`). stdio is assumed when `type` is absent. A connect failure throws from `session()`. For lower-level control, `connectMcpServers(configs)` is exported from `@skawld/agent-sdk` and returns an `McpConnection` (`tools`, `close()`).
+Config shape mirrors the Claude Agent SDK (`McpStdioServerConfig` | `McpHttpServerConfig`). stdio is assumed when `type` is absent. A connect failure throws from `session()`. For lower-level control, `connectMcpServers(configs)` is exported from `@privos_ai/privos-agent-sdk` and returns an `McpConnection` (`tools`, `close()`).
 
 ## Skills
 
@@ -279,11 +279,11 @@ The markdown body becomes the subagent's system prompt.
 
 📖 Docs: https://skawld.com/docs/providers
 
-To target a model the built-in providers don't cover, extend `BaseProvider` (from `@skawld/agent-sdk/providers`). Three members: `id`, `contextWindow(model)`, and an async `stream(req)` that yields `ProviderStreamEvent`s. The engine handles tools, permissions, sessions, and compaction — a provider only translates one request into a normalized event stream.
+To target a model the built-in providers don't cover, extend `BaseProvider` (from `@privos_ai/privos-agent-sdk/providers`). Three members: `id`, `contextWindow(model)`, and an async `stream(req)` that yields `ProviderStreamEvent`s. The engine handles tools, permissions, sessions, and compaction — a provider only translates one request into a normalized event stream.
 
 ```ts
-import { BaseProvider } from "@skawld/agent-sdk/providers";
-import type { ProviderRequest, ProviderStreamEvent } from "@skawld/agent-sdk/providers";
+import { BaseProvider } from "@privos_ai/privos-agent-sdk/providers";
+import type { ProviderRequest, ProviderStreamEvent } from "@privos_ai/privos-agent-sdk/providers";
 
 class MyProvider extends BaseProvider {
   readonly id = "my-provider";
@@ -315,7 +315,7 @@ class MyProvider extends BaseProvider {
 `AgentOptions.compaction` takes a `CompactionStrategy`. The default keeps the last 10 turn boundaries and summarizes everything older into one synthetic user message, triggering when projected input tokens reach 80% of the model's context window. Override only when you need different retention/summarization.
 
 ```ts
-import type { CompactionStrategy, CompactionContext } from "@skawld/agent-sdk";
+import type { CompactionStrategy, CompactionContext } from "@privos_ai/privos-agent-sdk";
 
 const keepLast6: CompactionStrategy = {
   id: "keep-last-6-turns",

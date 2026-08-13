@@ -1,16 +1,16 @@
 {
-  "name": "@skawld/agent-sdk",
-  "version": "0.2.0",
-  "description": "An open-source TypeScript agent harness for software engineering.",
+  "name": "@privos_ai/privos-agent-sdk",
+  "version": "0.3.0-rc.0",
+  "description": "PrivOS-maintained fork of skawld-sdk: TypeScript agent SDK with multi-root configDir and tolerant SSE streaming.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/skawld/skawld-sdk#readme",
+  "homepage": "https://github.com/PrivOS-AI/privos-agent-sdk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skawld/skawld-sdk.git"
+    "url": "git+https://github.com/PrivOS-AI/privos-agent-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/skawld/skawld-sdk/issues"
+    "url": "https://github.com/PrivOS-AI/privos-agent-sdk/issues"
   },
   "keywords": [
     "agent",

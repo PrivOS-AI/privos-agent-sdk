@@ -90,7 +90,7 @@ interface RunOptions {
 
 📖 Docs: https://skawld.com/docs/events
 
-`session.run()` yields these. Discriminate on `event.type`. (All exported as types from `@skawld/agent-sdk`.)
+`session.run()` yields these. Discriminate on `event.type`. (All exported as types from `@privos_ai/privos-agent-sdk`.)
 
 | `type` | Key fields | Meaning |
 |---|---|---|
@@ -125,7 +125,7 @@ import {
   OpenAIChatCompletionsProvider,
   OpenAIResponsesProvider,
   BaseProvider,
-} from "@skawld/agent-sdk/providers";
+} from "@privos_ai/privos-agent-sdk/providers";
 ```
 
 | Class | Env var | Notes |
@@ -185,7 +185,7 @@ Known context windows are built in for common OpenAI models (`gpt-5` 400k, `gpt-
 
 📖 Docs: errors https://skawld.com/docs/errors · compaction https://skawld.com/docs/compaction
 
-All extend `SkawldError`, exported from `@skawld/agent-sdk`:
+All extend `SkawldError`, exported from `@privos_ai/privos-agent-sdk`:
 
 ```ts
 SkawldError, AuthError, RateLimitError, ContextLengthError,
@@ -206,7 +206,7 @@ ProviderError, ConfigError, SkillError, HookError
 
 ## Common types
 
-Forwarded from core, importable from `@skawld/agent-sdk`:
+Forwarded from core, importable from `@privos_ai/privos-agent-sdk`:
 
 ```ts
 Message, ContentBlock, TextBlock, ToolUseBlock, ToolResultBlock,
@@ -245,7 +245,7 @@ Iterate `message.content`, discriminating on `block.type`. Assistant text lives 
 
 📖 Docs: https://skawld.com/docs/sessions
 
-Implement this to back sessions with a custom store (Postgres, Redis, …). Pass an instance as `AgentOptions.sessionStore`. Built-ins: `SqliteSessionStore`, `InMemorySessionStore` (from `@skawld/agent-sdk/sessions`).
+Implement this to back sessions with a custom store (Postgres, Redis, …). Pass an instance as `AgentOptions.sessionStore`. Built-ins: `SqliteSessionStore`, `InMemorySessionStore` (from `@privos_ai/privos-agent-sdk/sessions`).
 
 ```ts
 interface SessionStore {

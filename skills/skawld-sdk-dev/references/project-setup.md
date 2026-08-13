@@ -2,16 +2,16 @@
 
 📖 Docs: install https://skawld.com/docs/install · quickstart https://skawld.com/docs/quickstart
 
-How to set up a fresh app that depends on `@skawld/agent-sdk`. The package is **ESM-only** and ships NodeNext-clean `.d.ts`. Getting module resolution right is step 0.
+How to set up a fresh app that depends on `@privos_ai/privos-agent-sdk`. The package is **ESM-only** and ships NodeNext-clean `.d.ts`. Getting module resolution right is step 0.
 
 ## Install
 
 ```sh
-bun add @skawld/agent-sdk        # Bun recommended
+bun add @privos_ai/privos-agent-sdk        # Bun recommended
 # or
-npm install @skawld/agent-sdk
-pnpm add @skawld/agent-sdk
-yarn add @skawld/agent-sdk
+npm install @privos_ai/privos-agent-sdk
+pnpm add @privos_ai/privos-agent-sdk
+yarn add @privos_ai/privos-agent-sdk
 ```
 
 Runs on **Node.js 18+** or **Bun 1.1+**.
@@ -24,7 +24,7 @@ Mark the app as ESM. There is no CommonJS build — `require()` will not work.
 {
   "name": "my-agent-app",
   "type": "module",                 // REQUIRED — the SDK is ESM-only
-  "dependencies": { "@skawld/agent-sdk": "^0.1.0" },
+  "dependencies": { "@privos_ai/privos-agent-sdk": "^0.1.0" },
   "scripts": {
     "start": "bun run src/index.ts",      // Bun runs .ts directly
     "build": "tsc -p tsconfig.json"
@@ -49,18 +49,18 @@ Either `NodeNext` (Node) or `Bundler` (Bun/bundlers) module resolution works; th
 }
 ```
 
-Under `NodeNext`, **relative imports in your own code need explicit `.js` extensions** (`import { x } from "./util.js"`). Imports from `@skawld/agent-sdk` and its subpaths do not — they resolve through the package `exports` map.
+Under `NodeNext`, **relative imports in your own code need explicit `.js` extensions** (`import { x } from "./util.js"`). Imports from `@privos_ai/privos-agent-sdk` and its subpaths do not — they resolve through the package `exports` map.
 
 ## Import surface
 
-Only these four subpaths are public. Never import from `@skawld/agent-sdk/dist/...`.
+Only these four subpaths are public. Never import from `@privos_ai/privos-agent-sdk/dist/...`.
 
 ```ts
-import { Agent, Session } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools, ToolRegistry } from "@skawld/agent-sdk/tools";
-import { InMemorySessionStore, SqliteSessionStore } from "@skawld/agent-sdk/sessions";
-import type { CanUseTool } from "@skawld/agent-sdk/permissions";
+import { Agent, Session } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools, ToolRegistry } from "@privos_ai/privos-agent-sdk/tools";
+import { InMemorySessionStore, SqliteSessionStore } from "@privos_ai/privos-agent-sdk/sessions";
+import type { CanUseTool } from "@privos_ai/privos-agent-sdk/permissions";
 ```
 
 ## Environment variables
@@ -95,9 +95,9 @@ Skills and subagents are picked up automatically on the first `agent.session()` 
 
 ```ts
 // src/index.ts
-import { Agent } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({
   provider: new AnthropicProvider(),

@@ -21,13 +21,13 @@ const distTestEnabled = !!process.env.SKAWLD_DIST_TEST;
 const repoRoot = join(import.meta.dir, "..", "..");
 const fixtureDir = join(import.meta.dir, "fixtures", "nodenext-consumer");
 const fixtureNodeModules = join(fixtureDir, "node_modules");
-const scopeDir = join(fixtureNodeModules, "@skawld");
-const symlinkTarget = join(scopeDir, "agent-sdk");
+const scopeDir = join(fixtureNodeModules, "@privos_ai");
+const symlinkTarget = join(scopeDir, "privos-agent-sdk");
 
 describe.skipIf(!distTestEnabled)("NodeNext consumer — published .d.ts resolve cleanly", () => {
   beforeAll(() => {
-    // Create node_modules/@skawld/agent-sdk symlink pointing at the repo root
-    // so tsc resolves "@skawld/agent-sdk", "@skawld/agent-sdk/providers", etc.
+    // Create node_modules/@privos_ai/privos-agent-sdk symlink pointing at the repo root
+    // so tsc resolves "@privos_ai/privos-agent-sdk", "@privos_ai/privos-agent-sdk/providers", etc.
     // through package.json exports.
     if (!existsSync(scopeDir)) {
       mkdirSync(scopeDir, { recursive: true });
@@ -44,6 +44,8 @@ describe.skipIf(!distTestEnabled)("NodeNext consumer — published .d.ts resolve
     }
   });
 
+  // A cold `tsc` over the published .d.ts set runs well past bun's 5s default,
+  // and a timeout here reads as a resolution failure rather than a slow check.
   test("consumer.ts typechecks with 0 errors under NodeNext", () => {
     // Run the local tsc against the fixture tsconfig.
     // We use `bun x tsc` so we don't rely on a global install.
@@ -69,5 +71,5 @@ describe.skipIf(!distTestEnabled)("NodeNext consumer — published .d.ts resolve
       result.status,
       `tsc exited with code ${result.status}.\nOutput:\n${output}`,
     ).toBe(0);
-  });
+  }, 60_000);
 });

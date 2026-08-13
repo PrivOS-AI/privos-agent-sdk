@@ -1,6 +1,6 @@
 # Skawld Starter App
 
-A minimal but complete terminal agent built on `@skawld/agent-sdk`. Copy this folder, then adapt `src/index.ts`.
+A minimal but complete terminal agent built on `@privos_ai/privos-agent-sdk`. Copy this folder, then adapt `src/index.ts`.
 
 Docs: https://skawld.com/docs (quickstart: https://skawld.com/docs/quickstart)
 

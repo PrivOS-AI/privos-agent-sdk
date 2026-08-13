@@ -1,22 +1,22 @@
 ---
 name: skawld-sdk-dev
-description: Build and run AI agents with the Skawld Agent SDK (@skawld/agent-sdk), a TypeScript/Bun agent harness with tools, sessions, permissions, hooks, streaming events, MCP, skills, and subagents. Use this skill whenever the user is writing code against @skawld/agent-sdk, importing Agent/Session/AnthropicProvider/OpenAIResponsesProvider/defaultTools, embedding an agent loop into a Node or Bun app, wiring custom tools, permission callbacks, hooks (preToolUse/postToolUse/userPromptSubmit/stop/preCompact), the AskUser tool, MCP servers, skills, or subagents, streaming agent events, steering or interrupting a run mid-flight, persisting/resuming sessions, or asks "how do I build an agent with skawld".
+description: Build and run AI agents with the Skawld Agent SDK (@privos_ai/privos-agent-sdk), a TypeScript/Bun agent harness with tools, sessions, permissions, hooks, streaming events, MCP, skills, and subagents. Use this skill whenever the user is writing code against @privos_ai/privos-agent-sdk, importing Agent/Session/AnthropicProvider/OpenAIResponsesProvider/defaultTools, embedding an agent loop into a Node or Bun app, wiring custom tools, permission callbacks, hooks (preToolUse/postToolUse/userPromptSubmit/stop/preCompact), the AskUser tool, MCP servers, skills, or subagents, streaming agent events, steering or interrupting a run mid-flight, persisting/resuming sessions, or asks "how do I build an agent with skawld".
 ---
 
 # Skawld Agent SDK Development
 
 ## Overview
 
-The Skawld Agent SDK (`@skawld/agent-sdk`) is an open-source TypeScript agent harness for software-engineering tasks — a Claude Code-style agent loop you embed into any Node.js 18+ or Bun 1.1+ app with a single import. This skill teaches how to **use** the SDK (run an agent, stream events, persist sessions) and how to **build with** it (custom tools, permission callbacks, MCP servers, skills, subagents).
+The Skawld Agent SDK (`@privos_ai/privos-agent-sdk`) is an open-source TypeScript agent harness for software-engineering tasks — a Claude Code-style agent loop you embed into any Node.js 18+ or Bun 1.1+ app with a single import. This skill teaches how to **use** the SDK (run an agent, stream events, persist sessions) and how to **build with** it (custom tools, permission callbacks, MCP servers, skills, subagents).
 
 It is ESM-only. The core engine makes **zero I/O assumptions** — no console output, no terminal escapes inside the engine. The embedding app owns all I/O by consuming the event stream.
 
-**Scope:** This skill handles building/using agents with `@skawld/agent-sdk` (the Skawld harness). It does **NOT** cover the Anthropic Claude API directly (use `claude-api`), the Claude Agent SDK from Anthropic (different package), generic MCP-server authoring (use `mcp-builder`), or non-skawld agent frameworks.
+**Scope:** This skill handles building/using agents with `@privos_ai/privos-agent-sdk` (the Skawld harness). It does **NOT** cover the Anthropic Claude API directly (use `claude-api`), the Claude Agent SDK from Anthropic (different package), generic MCP-server authoring (use `mcp-builder`), or non-skawld agent frameworks.
 
 ## When to use
 
 Trigger this skill when the user:
-- Imports from `@skawld/agent-sdk`, `@skawld/agent-sdk/providers`, `/tools`, `/sessions`, or `/permissions`.
+- Imports from `@privos_ai/privos-agent-sdk`, `@privos_ai/privos-agent-sdk/providers`, `/tools`, `/sessions`, or `/permissions`.
 - Constructs `new Agent({...})`, calls `agent.session()`, or iterates `session.run(prompt)`.
 - Wires providers (`AnthropicProvider`, `OpenAIChatCompletionsProvider`, `OpenAIResponsesProvider`).
 - Builds custom tools, a `canUseTool` permission callback, permission rules, MCP servers, skills, or subagents.
@@ -28,11 +28,11 @@ Import only from these four public subpaths (controlled via the `exports` map):
 
 | Subpath | Exports |
 |---|---|
-| `@skawld/agent-sdk` | `Agent`, `Session`, `defaultTools`, `connectMcpServers`, core types, `Event` types + `isSubagentEvent`/`isHookErrorEvent`, `Hooks` types, `AskUserHandler` types, error classes, `CompactionStrategy` |
-| `@skawld/agent-sdk/providers` | `AnthropicProvider`, `OpenAIChatCompletionsProvider`, `OpenAIResponsesProvider`, `BaseProvider` |
-| `@skawld/agent-sdk/tools` | `ToolRegistry`, `defaultTools`, built-in tool classes, MCP tool helpers, task types |
-| `@skawld/agent-sdk/sessions` | `SqliteSessionStore`, `InMemorySessionStore`, `SessionStore` + task persistence types |
-| `@skawld/agent-sdk/permissions` | `PermissionEngine`, `CanUseTool` callback types, permission rule types |
+| `@privos_ai/privos-agent-sdk` | `Agent`, `Session`, `defaultTools`, `connectMcpServers`, core types, `Event` types + `isSubagentEvent`/`isHookErrorEvent`, `Hooks` types, `AskUserHandler` types, error classes, `CompactionStrategy` |
+| `@privos_ai/privos-agent-sdk/providers` | `AnthropicProvider`, `OpenAIChatCompletionsProvider`, `OpenAIResponsesProvider`, `BaseProvider` |
+| `@privos_ai/privos-agent-sdk/tools` | `ToolRegistry`, `defaultTools`, built-in tool classes, MCP tool helpers, task types |
+| `@privos_ai/privos-agent-sdk/sessions` | `SqliteSessionStore`, `InMemorySessionStore`, `SessionStore` + task persistence types |
+| `@privos_ai/privos-agent-sdk/permissions` | `PermissionEngine`, `CanUseTool` callback types, permission rule types |
 
 ## Official documentation
 
@@ -66,9 +66,9 @@ Page order: Introduction → Install → Quickstart → Overview → Agent → S
 ## Quick start
 
 ```ts
-import { Agent } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import { defaultTools } from "@skawld/agent-sdk/tools";
+import { Agent } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({
   provider: new AnthropicProvider(),   // reads ANTHROPIC_API_KEY from env
@@ -92,7 +92,7 @@ for await (const event of session.run("List the files in the current directory."
 await agent.close();   // closes the session store + disconnects MCP servers
 ```
 
-Install with `bun add @skawld/agent-sdk` (Bun recommended; npm/pnpm/yarn also work).
+Install with `bun add @privos_ai/privos-agent-sdk` (Bun recommended; npm/pnpm/yarn also work).
 
 ## Core mental model
 

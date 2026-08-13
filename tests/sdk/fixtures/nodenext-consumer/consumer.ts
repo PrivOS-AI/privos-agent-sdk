@@ -6,12 +6,12 @@
  * This file is compiled by the guardrail test to verify zero TS2834/TS2835 errors.
  */
 
-import { Agent, loadConfig } from "@skawld/agent-sdk";
-import type { LoadedConfig } from "@skawld/agent-sdk";
-import { AnthropicProvider } from "@skawld/agent-sdk/providers";
-import type { Tool } from "@skawld/agent-sdk/tools";
-import type { SessionStore } from "@skawld/agent-sdk/sessions";
-import { PermissionEngine } from "@skawld/agent-sdk/permissions";
+import { Agent, loadConfig } from "@privos_ai/privos-agent-sdk";
+import type { LoadedConfig } from "@privos_ai/privos-agent-sdk";
+import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
+import type { Tool } from "@privos_ai/privos-agent-sdk/tools";
+import type { SessionStore } from "@privos_ai/privos-agent-sdk/sessions";
+import { PermissionEngine } from "@privos_ai/privos-agent-sdk/permissions";
 
 // Reference each export so TypeScript does not elide the imports.
 const _agent: typeof Agent = Agent;

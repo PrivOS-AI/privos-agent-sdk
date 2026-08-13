@@ -1,0 +1,92 @@
+# Tokenless release-lifecycle check.
+#
+# Everything a publish would do EXCEPT publishing: build, typecheck, test, pack,
+# then prove the packed tarball is what a consumer actually gets. It needs no
+# secrets, so it runs on forks and pull requests too — the release step that
+# does need credentials is deliberately a separate, protected workflow.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # `npm pack` and the NodeNext consumer check run on Node, not Bun: the
+      # point is to verify what a Node consumer resolves, not what Bun does.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun test
+
+      - name: Build
+        run: bun run build
+
+      # Imports only the published specifiers against the built dist, and
+      # typechecks a NodeNext consumer through package.json exports. This is the
+      # step that catches an export map or .d.ts that only works in-repo.
+      - name: Consumer smoke (packed specifiers + NodeNext resolution)
+        run: bun run test:dist
+
+      - name: Pack
+        id: pack
+        run: |
+          tarball="$(npm pack --silent | tail -1)"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+
+      # A tarball is the real published artifact, so assert on it rather than on
+      # the working tree: the licence and readme must ship, and nothing that
+      # looks like a credential or a local dotfile may.
+      - name: Inspect and hash the tarball
+        run: |
+          tarball="${{ steps.pack.outputs.tarball }}"
+          echo "sha256: $(sha256sum "$tarball" | cut -d' ' -f1)"
+          echo "size:   $(du -h "$tarball" | cut -f1)"
+          contents="$(tar -tzf "$tarball")"
+          echo "$contents" | sed 's/^/  /'
+
+          for required in package/package.json package/README.md package/LICENSE; do
+            echo "$contents" | grep -qx "$required" || { echo "::error::$required missing from the tarball"; exit 1; }
+          done
+
+          if echo "$contents" | grep -Ei '(^|/)\.env|(^|/)\.npmrc|secret|\.pem$|\.key$'; then
+            echo "::error::tarball contains a file that looks like a credential"
+            exit 1
+          fi
+
+          # The packed manifest, not the source one, is what the registry serves.
+          node -e '
+            const { execSync } = require("node:child_process");
+            const raw = execSync(`tar -xzOf ${process.argv[1]} package/package.json`, { encoding: "utf8" });
+            const pkg = JSON.parse(raw);
+            if (pkg.name !== "@privos_ai/privos-agent-sdk") throw new Error(`unexpected name ${pkg.name}`);
+            if (pkg.publishConfig?.access !== "public") throw new Error("publishConfig.access must stay public");
+            console.log(`packed manifest: ${pkg.name}@${pkg.version} (${pkg.license})`);
+          ' "$tarball"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarball
+          path: "*.tgz"
+          if-no-files-found: error

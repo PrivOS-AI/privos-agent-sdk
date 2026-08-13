@@ -106,6 +106,6 @@ These are **not** part of `defaultTools()` — the engine registers them only wh
 
 ## Removing or restricting tools
 
-- Start from `new ToolRegistry()` (from `@skawld/agent-sdk/tools`) and register only what you want, instead of `defaultTools()`.
+- Start from `new ToolRegistry()` (from `@privos_ai/privos-agent-sdk/tools`) and register only what you want, instead of `defaultTools()`.
 - Or keep `defaultTools()` and **deny** tools via permission rules: `{ kind: "tool", tool: "Bash", decision: "deny" }`.
 - Subagents get a filtered view of the parent's tools via their `tools:` frontmatter allowlist.

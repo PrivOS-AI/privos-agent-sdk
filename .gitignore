@@ -14,6 +14,8 @@ coverage
 *.log
 .env
 .env.local
-tests/fixtures/skills
+# tests/fixtures/skills is deliberately TRACKED: the skill-loader and
+# skills-wiring suites read it, so ignoring it made a fresh clone fail 18 tests
+# with no way to tell a broken fork from a missing directory.
 CLAUDE.md
 AGENTS.md

@@ -4,7 +4,7 @@
  */
 
 import readline from "node:readline/promises";
-import type { AskUserHandler } from "@skawld/agent-sdk/tools";
+import type { AskUserHandler } from "@privos_ai/privos-agent-sdk/tools";
 
 export const askUser: AskUserHandler = async (req, signal) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

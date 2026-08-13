@@ -56,6 +56,14 @@ export async function loadSkillsFromDir(opts: LoadSkillsOptions): Promise<LoadSk
       continue;
     }
 
+    // `readdir` order is filesystem-defined, so without this the winner of a
+    // name collision differed between machines — the same tree resolved one way
+    // locally and the other way in CI. Precedence is the whole point of the
+    // multi-root loader, so make it deterministic: within one directory the
+    // lexicographically first file wins, exactly as the first directory wins
+    // across directories.
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
     for (const ent of entries) {
       const entryDir = path.join(skillsRoot, ent.name);
       if (ent.isSymbolicLink()) {

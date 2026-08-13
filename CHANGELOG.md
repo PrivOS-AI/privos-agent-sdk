@@ -27,6 +27,12 @@ First release of the PrivOS fork. Everything below `0.2.0` is upstream
 
 ### Fixed
 
+- **Name-collision precedence is deterministic.** Both the skill and subagent loaders walked
+  `readdir` order, which the filesystem defines, so when two entries in one directory claimed the
+  same name the winner differed between machines — the same tree resolved one way locally and the
+  other way in CI. Entries are now walked in lexicographic order, so within a directory the first
+  file wins exactly as the first directory wins across directories. This is the contract the
+  multi-root feature exists to provide; previously it only held across directories, not inside one.
 - **Skill-loader test fixtures ship with the repository.** `tests/fixtures/skills` was listed in
   `.gitignore`, so a fresh clone ran 18 skill-loader and skills-wiring tests against a directory
   that was never committed and failed all of them — indistinguishable from a broken fork. Base

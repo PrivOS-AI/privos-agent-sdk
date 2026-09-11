@@ -10,6 +10,11 @@
 # The artifact is built once, in `verify`, and `publish` uploads that exact
 # tarball. Rebuilding in the publish job would sign a different artifact from
 # the one that passed the gates.
+#
+# Auth is npm Trusted Publishing (OIDC) — no NPM_TOKEN. One-time setup on
+# npmjs.com (@privos_ai/privos-agent-sdk -> Settings -> Trusted Publisher):
+#   Publisher: GitHub Actions | Organization: PrivOS-AI | Repository: privos-agent-sdk
+#   Workflow filename: release.yml | Environment: release
 name: Release
 
 on:
@@ -31,15 +36,15 @@ jobs:
       tarball: ${{ steps.pack.outputs.tarball }}
       version: ${{ steps.pack.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install (frozen lockfile)
         run: bun install --frozen-lockfile
@@ -114,32 +119,23 @@ jobs:
       # tarball to this workflow run.
       id-token: write
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           registry-url: 'https://registry.npmjs.org'
 
       - uses: actions/download-artifact@v4
         with:
           name: release-tarball
 
-      - name: Publishing credential is present
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::NPM_TOKEN is not set on this repository."
-            echo "Create an npm *automation* token for the @privos_ai org and add it as the NPM_TOKEN secret."
-            echo "A classic publish token will not work here: 2FA prompts cannot be answered by a workflow."
-            exit 1
-          fi
+      # Auth is npm Trusted Publishing (OIDC) — no token. Needs npm >= 11.5.1.
+      - name: Ensure npm supports trusted publishing
+        run: npm install -g npm@latest
 
       # `--ignore-scripts`: the tarball is already built and verified, and a
       # lifecycle script running at publish time would execute code that no gate
       # in this workflow has looked at.
       - name: Publish with provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           tarball="${{ needs.verify.outputs.tarball }}"
           dist_tag=latest

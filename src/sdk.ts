@@ -64,3 +64,5 @@ export type { CompactionStrategy } from "./core/compaction.js";
 export { loadConfig } from "./config/loader.js";
 export type { LoadConfigOptions, LoadedConfig } from "./config/loader.js";
 export type { SkawldConfig, ConfigWarning } from "./config/schema.js";
+export { validateMemoryNote } from "./core/working-memory.js";
+export type { WorkingMemory, MemoryNote } from "./core/working-memory.js";

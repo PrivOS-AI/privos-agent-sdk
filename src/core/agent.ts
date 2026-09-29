@@ -1,6 +1,7 @@
 /** Agent class. See docs/05-agent-loop.html#agent. */
 
 import os from "node:os";
+import { MEMORY_INSTRUCTIONS, RememberTool, type WorkingMemory } from "./working-memory.js";
 import { SKAWLD_VERSION } from "./version.js";
 import { ConfigError } from "./errors.js";
 import { buildSystemBlocks } from "./system-prompt.js";
@@ -36,6 +37,8 @@ import { AskUserTool } from "../tools/ask-user.js";
 import type { AskUserHandler } from "../tools/ask-user.js";
 
 export interface AgentOptions {
+  /** Authenticated runtime-owned private memory; never construct from model owner selectors. */
+  workingMemory?: WorkingMemory;
   /** LLM provider. Required. */
   provider: BaseProvider;
   /** Model id string. Required (skawld has no default). */
@@ -123,6 +126,7 @@ export interface AgentOptions {
 
 /** Internal state accessible to the loop and scheduler (Phase 3+). */
 export interface AgentInternal {
+  workingMemory?: WorkingMemory;
   provider: BaseProvider;
   model: ModelId;
   tools: ToolRegistry;
@@ -212,10 +216,12 @@ export class Agent {
 
     const cwd = opts.cwd ?? process.cwd();
     const tools = opts.tools ?? defaultTools();
+    if (opts.workingMemory) tools.register(new RememberTool(opts.workingMemory));
     const permMode: PermissionMode = opts.permissions?.mode ?? "default";
     // Copy so connectSkills' auto-allow pushes land on our array, never the
     // caller's. The engine reads its `opts.rules` live, so pushes still reach it.
     const permRules = [...(opts.permissions?.rules ?? [])];
+    if (opts.workingMemory) permRules.push({ kind: "tool", tool: "Remember", decision: "allow" });
 
     const permissionEngine = new PermissionEngine({
       mode: permMode,
@@ -229,7 +235,7 @@ export class Agent {
     // Rebuildable so the tool-name list can be refreshed after MCP tools register.
     const buildBlocks = (toolNames: string[]): SystemBlock[] =>
       buildSystemBlocks({
-        userInstructions: opts.systemPrompt,
+        userInstructions: [opts.systemPrompt, opts.workingMemory ? MEMORY_INSTRUCTIONS : undefined].filter(Boolean).join("\n\n") || undefined,
         cwd,
         os: { platform: process.platform, release: os.release(), arch: process.arch },
         shell: process.env.SHELL ?? "unknown",
@@ -390,6 +396,7 @@ export class Agent {
     };
 
     const internal: AgentInternal = {
+      workingMemory: opts.workingMemory,
       provider: opts.provider,
       model: opts.model,
       tools,
@@ -435,7 +442,13 @@ export class Agent {
     await connectSubagents();
     const store = getStore();
 
-    const record = await store.create({ id: input?.id, meta: input?.meta });
+    const record = await store.create({ id: input?.id, meta: {
+      ...input?.meta,
+      ...(internal.workingMemory ? { privateMemoryOwner: internal.workingMemory.ownerKey } : {}),
+    } });
+    if (record.meta.privateMemoryOwner !== internal.workingMemory?.ownerKey) {
+      throw new ConfigError("This private conversation belongs to a different memory context. Start a fresh conversation.");
+    }
 
     // Resume: load persisted messages. New session: start empty.
     const storedMessages = input?.id ? await store.loadMessages(input.id) : [];

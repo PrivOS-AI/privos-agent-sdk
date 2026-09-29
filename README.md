@@ -1,8 +1,7 @@
 # PrivOS Agent SDK
 
 A PrivOS-maintained fork of [skawld-sdk](https://github.com/skawld/skawld-sdk), published as
-`@privos_ai/privos-agent-sdk`. It carries two features that were needed downstream while the
-upstream pull requests waited for review, and is otherwise the upstream SDK: same runtime
+`@privos_ai/privos-agent-sdk`. It includes multi-root configuration, tolerant streaming and runtime-bound private working memory. It preserves upstream runtime compatibility: same runtime
 identifiers (`.skawld`, `SKAWLD_*`, `SkawldError`), same classes, exports and session format,
 so switching the import is the whole migration.
 
@@ -133,6 +132,44 @@ const agent = new Agent({
 ```
 
 ---
+
+
+## Private working memory
+
+Pass `workingMemory: WorkingMemory` and a private `sessionStore` to `new Agent`.
+See [the host integration example](examples/working-memory.ts). `WorkingMemory`
+is an authenticated host adapter, not a model-selectable namespace. The host
+must bind the verified human **and** project inside the current workspace;
+`ownerKey` is an opaque affinity key, never an authorization credential.
+
+The SDK installs `Remember` automatically, retaining concise observations and
+interpretations through the host. Human confirmation, correction, forgetting,
+durable storage and semantic ranking belong to the host. Credentials and model
+owner/scope selectors are rejected. Private working memory is distinct from
+shared Firm Knowledge; only the existing authenticated MCP contribution tools
+may create shared draft proposals. They cannot approve or publish.
+
+Before each root provider request, `recall` supplies at most 12,000 characters of
+attributed reference data. It is not persisted as a session message or promoted
+to authority. The behavior instructions also accompany the reference for
+provider routes that do not preserve system messages. Private sessions refuse a
+different `ownerKey` or an unbound agent. Store sessions outside shared mounts:
+assistant answers and tool results may contain private reference material.
+
+`contextEpoch` changes on correction/forgetting or shared authority invalidation,
+not insertion of a new note or a different query's ranking. A resumed turn drops
+old derived model context when that epoch changes; original stored chats remain.
+A change during an already-running turn stops that turn, preventing stale tool
+results or repeated side effects. Retry starts with current references.
+Subagents do not independently inject memory; their parent owns the context.
+Hosts must recheck current eligibility for shared-derived notes, including
+cached projections, and suppress reconstruction from forgotten source material.
+
+Sandbox implements this adapter using its durable host store, a Hub-signed
+human/workspace/project/private-attempt context, and Hub's existing embeddings
+and OAuth-bound Firm Knowledge MCP. No new SDK database, vector service or
+publication authority is introduced. Optional consumers without this adapter
+retain their existing behavior.
 
 ## Public API surface
 

@@ -27,6 +27,8 @@ export interface RunOptions {
 
 /** Internal state accessible to the loop and scheduler (Phase 3+). */
 export interface SessionInternal {
+  memoryQuery?: string;
+  memoryRequestStarted?: boolean;
   id: string;
   agent: Agent;
   store: SessionStore;

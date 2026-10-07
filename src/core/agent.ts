@@ -49,6 +49,12 @@ export interface AgentOptions {
    * Claude Agent SDK's mcpServers option.
    */
   mcpServers?: Record<string, McpServerConfig>;
+  /**
+   * Host-supplied env for stdio MCP servers, called with each server's name.
+   * Layered over the safe base env and under a server's own `env`. Values
+   * must be relay tokens or other non-secret handles, never raw secrets.
+   */
+  mcpExtraEnv?: (serverName: string) => Record<string, string>;
   /** Permission configuration. */
   permissions?: {
     mode?: PermissionMode;
@@ -271,7 +277,7 @@ export class Agent {
       if (!opts.mcpServers || Object.keys(opts.mcpServers).length === 0) return Promise.resolve();
       if (!_mcpConnect) {
         _mcpConnect = (async () => {
-          _mcp = await connectMcpServers(opts.mcpServers!);
+          _mcp = await connectMcpServers(opts.mcpServers!, { extraEnv: opts.mcpExtraEnv });
           for (const tool of _mcp.tools) tools.register(tool);
           // Refresh the system-prompt tool list to include the MCP tools.
           internal.systemBlocks = buildBlocks(tools.list().map(t => t.name).sort());

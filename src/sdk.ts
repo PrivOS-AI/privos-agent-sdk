@@ -12,7 +12,7 @@ export { defaultTools } from "./tools/registry.js";
 // MCP client: helper + config types (so `mcpServers` configs are typeable from the main entry).
 export { connectMcpServers } from "./tools/mcp/index.js";
 export type {
-  McpConnection, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig,
+  McpConnection, McpConnectOptions, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig,
 } from "./tools/mcp/index.js";
 
 // Common types (forwarded from core).
@@ -47,7 +47,7 @@ export type {
 // AskUser tool types (for consumers wiring their own handler).
 export type {
   AskUserHandler, AskUserRequest, AskUserResponse, AskUserAnswer,
-  AskUserInput, AskUserQuestion, AskUserOption,
+  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential,
 } from "./tools/ask-user.js";
 
 // Errors.

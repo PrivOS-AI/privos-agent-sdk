@@ -66,4 +66,30 @@ describe("connectMcpServers (stdio)", () => {
       }),
     ).rejects.toThrow(/collide after normalization/);
   });
+
+  test("extraEnv reaches the stdio child, and explicit env overrides it", async () => {
+    const ENV_FIXTURE = path.resolve(import.meta.dir, "../../../tests/fixtures/mcp-env-server.ts");
+    const seen: string[] = [];
+    conn = await connectMcpServers(
+      {
+        plain: { command: "bun", args: ["run", ENV_FIXTURE] },
+        pinned: { command: "bun", args: ["run", ENV_FIXTURE], env: { RELAY_KEY: "pinned-value" } },
+      },
+      {
+        extraEnv: (name) => {
+          seen.push(name);
+          return { RELAY_KEY: "relay-token", RELAY_BASE_URL: "http://relay.invalid/x" };
+        },
+      },
+    );
+    expect(seen.sort()).toEqual(["pinned", "plain"]);
+
+    const call = async (server: string, name: string): Promise<unknown> => {
+      const tool = conn!.tools.find((t) => t.name === `mcp__${server}__getenv`)!;
+      return (await tool.execute({ name }, ctx())).content;
+    };
+    expect(await call("plain", "RELAY_KEY")).toEqual([{ type: "text", text: "relay-token" }]);
+    expect(await call("plain", "RELAY_BASE_URL")).toEqual([{ type: "text", text: "http://relay.invalid/x" }]);
+    expect(await call("pinned", "RELAY_KEY")).toEqual([{ type: "text", text: "pinned-value" }]);
+  });
 });

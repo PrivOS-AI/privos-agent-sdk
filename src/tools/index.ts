@@ -26,11 +26,11 @@ export type { Task, TaskStatus, CreateTaskInput, TaskPatch } from "../sessions/t
 export { AskUserTool } from "./ask-user.js";
 export type {
   AskUserHandler, AskUserRequest, AskUserResponse, AskUserAnswer,
-  AskUserInput, AskUserQuestion, AskUserOption,
+  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential,
 } from "./ask-user.js";
 
 // MCP client support.
 export { connectMcpServers, makeMcpTool, buildMcpToolName, normalizeNameForMcp } from "./mcp/index.js";
 export type {
-  McpConnection, McpCallTool, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig,
+  McpConnection, McpConnectOptions, McpCallTool, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig,
 } from "./mcp/index.js";

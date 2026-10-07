@@ -10,13 +10,41 @@ export interface AskUserOption {
   description?: string;
 }
 
+/**
+ * A request for a secret (API key or token). The user enters the value in a
+ * host-provided secure form; neither the value nor anything derived from it
+ * ever flows back through this tool. The host maps these snake_case names to
+ * its own and decides the (value-free) answer text.
+ */
+export interface AskUserCredential {
+  /** Lowercase host the key is for, e.g. "api.openai.com". A leading "*." is allowed. */
+  host: string;
+  /** URL path prefix the key applies to; must start with "/". */
+  path_prefix?: string;
+  /** Why the key is needed, shown to the user. 1–200 characters of plain text. */
+  purpose: string;
+  /** Env var name the key will be exposed under, e.g. "OPENAI_API_KEY". */
+  env_name?: string;
+  /** Env var name for the matching base URL, e.g. "OPENAI_BASE_URL". */
+  base_url_env_name?: string;
+  /** true: the stored key for this host no longer works; ask for a new value. */
+  rotate?: boolean;
+  /**
+   * Set by the host on its own copy of the question to correlate a pending
+   * request. validate() never copies it from model input.
+   */
+  requestId?: string;
+}
+
 export interface AskUserQuestion {
   /** The complete question, e.g. "Which storage backend should the cache use?" */
   question: string;
   /** Short chip/tag label for UIs, max 12 characters, e.g. "Backend". */
   header: string;
-  /** 2–4 distinct choices. */
+  /** 2–4 distinct choices. Empty when `credential` is set. */
   options: AskUserOption[];
+  /** Ask for an API key or token through a secure form. Must be the only question. */
+  credential?: AskUserCredential;
   /** Allow selecting multiple options. Resolved by validate(); defaults to false. */
   multi_select: boolean;
 }
@@ -61,7 +89,7 @@ const SCHEMA = {
           header: { type: "string", description: "Very short label displayed as a chip/tag (max 12 chars), e.g. 'Approach'." },
           options: {
             type: "array",
-            description: "2-4 distinct, mutually exclusive choices (unless multi_select). Do NOT add an 'Other' option — free-text answers are always available to the user.",
+            description: "2-4 distinct, mutually exclusive choices (unless multi_select). Do NOT add an 'Other' option — free-text answers are always available to the user. Omit when `credential` is set.",
             items: {
               type: "object",
               properties: {
@@ -72,8 +100,21 @@ const SCHEMA = {
             },
           },
           multi_select: { type: "boolean", description: "Allow selecting multiple options. Defaults to false." },
+          credential: {
+            type: "object",
+            description: "Ask the user for an API key or token. Use as the only question, with no options.",
+            properties: {
+              host: { type: "string", description: "Lowercase host the key is for, e.g. 'api.openai.com'." },
+              path_prefix: { type: "string", description: "Optional URL path prefix starting with '/'." },
+              purpose: { type: "string", description: "Why the key is needed, 1-200 characters of plain text." },
+              env_name: { type: "string", description: "Env var name for the key, e.g. 'OPENAI_API_KEY'." },
+              base_url_env_name: { type: "string", description: "Env var name for the base URL, e.g. 'OPENAI_BASE_URL'." },
+              rotate: { type: "boolean", description: "true when the stored key for this host was rejected and a new one is needed." },
+            },
+            required: ["host", "purpose"],
+          },
         },
-        required: ["question", "header", "options"],
+        required: ["question", "header"],
       },
     },
   },
@@ -92,7 +133,16 @@ const DESCRIPTION =
   `questions into one call rather than calling this tool repeatedly. Do NOT use ` +
   `this tool for anything you can answer by reading files or running commands, ` +
   `and do not use it to ask for permission to run a tool — the permission system ` +
-  `handles that.`;
+  `handles that. ` +
+  `To obtain an API key or token, ask ONE question with \`credential\` and no ` +
+  `other questions. The user enters it in a secure form; you never see it. ` +
+  `Never ask for a secret in a normal question or in chat. If a stored key is ` +
+  `rejected by the service (401/403), ask again with \`rotate: true\`.`;
+
+const HOST_RE = /^(\*\.)?[a-z0-9.-]+$/;
+const ENV_NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS_RE = /[\u0000-\u001f\u007f]/;
 
 export class AskUserTool implements Tool<AskUserInput> {
   readonly name = "AskUser";
@@ -125,27 +175,19 @@ export class AskUserTool implements Tool<AskUserInput> {
         throw new ToolExecutionError(`questions[${qi}].header must be at most 12 characters`, { tool_name: this.name });
       }
 
-      if (!Array.isArray(qObj.options) || qObj.options.length < 2 || qObj.options.length > 4) {
-        throw new ToolExecutionError(`questions[${qi}].options must be an array of 2–4 entries`, { tool_name: this.name });
-      }
+      const credential = qObj.credential == null ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
 
-      const labels = new Set<string>();
-      const options: AskUserOption[] = qObj.options.map((o: unknown, oi: number) => {
-        if (typeof o !== "object" || o === null) {
-          throw new ToolExecutionError(`questions[${qi}].options[${oi}] must be an object`, { tool_name: this.name });
+      let options: AskUserOption[] = [];
+      if (credential) {
+        if (qObj.options !== undefined && (!Array.isArray(qObj.options) || qObj.options.length > 0)) {
+          throw new ToolExecutionError(`questions[${qi}].options must be absent or empty when credential is set`, { tool_name: this.name });
         }
-        const oObj = o as Record<string, unknown>;
-        if (typeof oObj.label !== "string" || oObj.label.trim() === "") {
-          throw new ToolExecutionError(`questions[${qi}].options[${oi}].label must be a non-empty string`, { tool_name: this.name });
+      } else {
+        if (!Array.isArray(qObj.options) || qObj.options.length < 2 || qObj.options.length > 4) {
+          throw new ToolExecutionError(`questions[${qi}].options must be an array of 2–4 entries`, { tool_name: this.name });
         }
-        if (labels.has(oObj.label)) {
-          throw new ToolExecutionError(`questions[${qi}].options has duplicate label: "${oObj.label}"`, { tool_name: this.name });
-        }
-        labels.add(oObj.label);
-        const opt: AskUserOption = { label: oObj.label };
-        if (typeof oObj.description === "string") opt.description = oObj.description;
-        return opt;
-      });
+        options = this.validateOptions(qObj.options, qi);
+      }
 
       const multi_select = typeof qObj.multi_select === "boolean" ? qObj.multi_select : false;
 
@@ -154,10 +196,73 @@ export class AskUserTool implements Tool<AskUserInput> {
         header: qObj.header,
         options,
         multi_select,
+        ...(credential ? { credential } : {}),
       };
     });
 
     return { questions: validated };
+  }
+
+  private validateOptions(rawOptions: unknown[], qi: number): AskUserOption[] {
+    const labels = new Set<string>();
+    return rawOptions.map((o: unknown, oi: number) => {
+      if (typeof o !== "object" || o === null) {
+        throw new ToolExecutionError(`questions[${qi}].options[${oi}] must be an object`, { tool_name: this.name });
+      }
+      const oObj = o as Record<string, unknown>;
+      if (typeof oObj.label !== "string" || oObj.label.trim() === "") {
+        throw new ToolExecutionError(`questions[${qi}].options[${oi}].label must be a non-empty string`, { tool_name: this.name });
+      }
+      if (labels.has(oObj.label)) {
+        throw new ToolExecutionError(`questions[${qi}].options has duplicate label: "${oObj.label}"`, { tool_name: this.name });
+      }
+      labels.add(oObj.label);
+      const opt: AskUserOption = { label: oObj.label };
+      if (typeof oObj.description === "string") opt.description = oObj.description;
+      return opt;
+    });
+  }
+
+  /**
+   * Shape-checks a credential request and returns a copy holding only the
+   * known fields, so model-supplied extras (request_id, status, …) are dropped.
+   * The host re-validates the full rule set; this only checks shape.
+   */
+  private validateCredential(raw: unknown, qi: number, questionCount: number): AskUserCredential {
+    const at = `questions[${qi}].credential`;
+    const fail = (msg: string): never => {
+      throw new ToolExecutionError(`${at}${msg}`, { tool_name: this.name });
+    };
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return fail(" must be an object");
+    if (questionCount !== 1) return fail(" requires it to be the only question");
+    const c = raw as Record<string, unknown>;
+
+    if (typeof c.host !== "string" || !HOST_RE.test(c.host)) {
+      return fail(".host must be lowercase letters, digits, dots and hyphens (optional leading '*.')");
+    }
+    if (c.path_prefix !== undefined && (typeof c.path_prefix !== "string" || !c.path_prefix.startsWith("/"))) {
+      return fail(".path_prefix must be a string starting with '/'");
+    }
+    if (
+      typeof c.purpose !== "string" || c.purpose.trim() === "" || c.purpose.length > 200 ||
+      CONTROL_CHARS_RE.test(c.purpose)
+    ) {
+      return fail(".purpose must be 1–200 characters of plain text");
+    }
+    for (const key of ["env_name", "base_url_env_name"] as const) {
+      const v = c[key];
+      if (v !== undefined && (typeof v !== "string" || !ENV_NAME_RE.test(v))) {
+        return fail(`.${key} must match ${ENV_NAME_RE.source}`);
+      }
+    }
+    if (c.rotate !== undefined && typeof c.rotate !== "boolean") return fail(".rotate must be a boolean");
+
+    const out: AskUserCredential = { host: c.host, purpose: c.purpose };
+    if (c.path_prefix !== undefined) out.path_prefix = c.path_prefix as string;
+    if (c.env_name !== undefined) out.env_name = c.env_name as string;
+    if (c.base_url_env_name !== undefined) out.base_url_env_name = c.base_url_env_name as string;
+    if (c.rotate !== undefined) out.rotate = c.rotate as boolean;
+    return out;
   }
 
   summarize(input: AskUserInput): string {

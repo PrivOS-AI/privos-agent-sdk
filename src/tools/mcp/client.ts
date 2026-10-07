@@ -30,20 +30,36 @@ export interface McpConnection {
   close(): Promise<void>;
 }
 
+/** Options for `connectMcpServers`. */
+export interface McpConnectOptions {
+  /**
+   * Host-supplied env for stdio server children, called once per server with
+   * its configured name. Merged over the base and under the server's own
+   * `env`, so a server that pins a variable keeps it. Values must be relay
+   * tokens or other non-secret handles, never raw secrets. Not used for
+   * HTTP servers.
+   */
+  extraEnv?: (serverName: string) => Record<string, string>;
+}
+
 /**
  * Environment for a stdio child process. The base is the MCP SDK's safe
  * subset (HOME, PATH, SHELL, …) so host secrets are not handed to every
- * server child; `inheritEnv: true` opts into the full host env. Explicit
- * `env` entries win over the base either way.
+ * server child; `inheritEnv: true` opts into the full host env. Host
+ * `extraEnv` is layered over the base, and explicit `env` entries win over
+ * both.
  */
-export function stdioChildEnv(stdio: McpStdioServerConfig): Record<string, string> {
+export function stdioChildEnv(
+  stdio: McpStdioServerConfig,
+  extraEnv?: Record<string, string>,
+): Record<string, string> {
   const base = stdio.inheritEnv
     ? (process.env as Record<string, string>)
     : getDefaultEnvironment();
-  return { ...base, ...(stdio.env ?? {}) };
+  return { ...base, ...(extraEnv ?? {}), ...(stdio.env ?? {}) };
 }
 
-function createTransport(config: McpServerConfig): Transport {
+function createTransport(config: McpServerConfig, extraEnv?: Record<string, string>): Transport {
   if (mcpServerType(config) === "http") {
     const http = config as Extract<McpServerConfig, { type: "http" }>;
     return new StreamableHTTPClientTransport(new URL(http.url), {
@@ -54,7 +70,7 @@ function createTransport(config: McpServerConfig): Transport {
   return new StdioClientTransport({
     command: stdio.command,
     args: stdio.args ?? [],
-    env: stdioChildEnv(stdio),
+    env: stdioChildEnv(stdio, extraEnv),
     // Inherit so the child's diagnostics reach our stderr and no unread pipe
     // can fill and block a chatty server.
     stderr: "inherit",
@@ -76,9 +92,10 @@ export async function listAllTools(client: Client): Promise<McpToolDefinition[]>
 async function connectOne(
   name: string,
   config: McpServerConfig,
+  options: McpConnectOptions,
 ): Promise<{ name: string; client: Client; config: McpServerConfig; mcpTools: McpToolDefinition[] }> {
   const client = new Client({ name: "skawld", version: SKAWLD_VERSION }, { capabilities: {} });
-  await client.connect(createTransport(config));
+  await client.connect(createTransport(config, options.extraEnv?.(name)));
   try {
     const mcpTools = await listAllTools(client);
     return { name, client, config, mcpTools };
@@ -150,6 +167,7 @@ export function findQualifiedNameProblems(
 /** Connect to every configured MCP server. Fail-fast with full teardown. */
 export async function connectMcpServers(
   servers: Record<string, McpServerConfig>,
+  options: McpConnectOptions = {},
 ): Promise<McpConnection> {
   const entries = Object.entries(servers);
   const normalized = new Set<string>();
@@ -162,7 +180,7 @@ export async function connectMcpServers(
     normalized.add(key);
   }
 
-  const settled = await Promise.allSettled(entries.map(([name, cfg]) => connectOne(name, cfg)));
+  const settled = await Promise.allSettled(entries.map(([name, cfg]) => connectOne(name, cfg, options)));
 
   const opened = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
   const failures = entries.flatMap(([name], i) =>

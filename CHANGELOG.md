@@ -2,6 +2,28 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.4.0] — 2026-10-07
+
+Additive release; every input that was valid in 0.3.0 stays valid.
+
+### Added
+
+- **`AskUser` credential question.** A question may carry `credential`
+  (`host`, `path_prefix`, `purpose`, `env_name`, `base_url_env_name`, `rotate`) to ask the user
+  for an API key or token through a host-provided secure form. It must be the only question and
+  takes no options. `validate()` copies only the known credential fields, so model-supplied
+  `request_id`, `status` and other extras are dropped, and the SDK renders only the text the host
+  handler returns. The new `AskUserCredential` type is exported from the main entry.
+- **Host-supplied env for stdio MCP servers.** `connectMcpServers(servers, { extraEnv })` and
+  `AgentOptions.mcpExtraEnv` take a `(serverName) => Record<string, string>` callback. Its values
+  are layered over the safe base env and under a server's own `env`, so a server that pins a
+  variable keeps it. Pass relay tokens, never raw secrets. `McpConnectOptions` is exported.
+
+### Changed
+
+- The `AskUser` tool schema no longer lists `options` as required (it is still required unless
+  `credential` is set) and its description explains when to use `credential`.
+
 ## [0.3.1] — 2026-10-07
 
 Patch release. A request changes only if one of its strings contains an unpaired UTF-16 surrogate,

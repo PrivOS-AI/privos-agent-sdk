@@ -462,3 +462,110 @@ describe("buildChildTools", () => {
     expect(names).not.toContain("AskUser");
   });
 });
+
+// ---------------------------------------------------------------------------
+// credential questions
+// ---------------------------------------------------------------------------
+describe("AskUserTool credential questions", () => {
+  const tool = makeTool(async () => ({ declined: true }));
+  const cred = { host: "api.openai.com", purpose: "Call the OpenAI API" };
+  const credQ = (extra: Record<string, unknown> = {}, credExtra: Record<string, unknown> = {}) => ({
+    question: "Need an OpenAI key",
+    header: "OpenAI key",
+    credential: { ...cred, ...credExtra },
+    ...extra,
+  });
+  const invalid = (raw: unknown, msg: RegExp) =>
+    expect(() => tool.validate(raw as Record<string, unknown>)).toThrow(msg);
+
+  test("is valid without options and keeps the credential", () => {
+    const input = tool.validate({
+      questions: [credQ({}, { path_prefix: "/v1", env_name: "OPENAI_API_KEY", base_url_env_name: "OPENAI_BASE_URL", rotate: true })],
+    });
+    const q = input.questions[0]!;
+    expect(q.options).toEqual([]);
+    expect(q.credential).toEqual({
+      host: "api.openai.com",
+      purpose: "Call the OpenAI API",
+      path_prefix: "/v1",
+      env_name: "OPENAI_API_KEY",
+      base_url_env_name: "OPENAI_BASE_URL",
+      rotate: true,
+    });
+  });
+
+  test("accepts empty options and a wildcard host", () => {
+    const input = tool.validate({ questions: [credQ({ options: [] }, { host: "*.example.com" })] });
+    expect(input.questions[0]!.credential!.host).toBe("*.example.com");
+  });
+
+  test("strips model-supplied request_id, requestId, status and unknown fields", () => {
+    const input = tool.validate({
+      questions: [credQ({}, { request_id: "r1", requestId: "r2", status: "resolved", extra: 1 })],
+    });
+    expect(input.questions[0]!.credential).toEqual({ ...cred });
+  });
+
+  test("must be the only question", () => {
+    invalid({ questions: [credQ(), SINGLE_Q] }, /credential requires it to be the only question/);
+    invalid({ questions: [credQ(), credQ()] }, /credential requires it to be the only question/);
+  });
+
+  test("rejects options on a credential question", () => {
+    invalid({ questions: [credQ({ options: [{ label: "A" }, { label: "B" }] })] }, /options must be absent or empty/);
+  });
+
+  test("rejects a bad host, prefix, purpose, env name and rotate", () => {
+    invalid({ questions: [credQ({}, { host: "API.openai.com" })] }, /\.host must be/);
+    invalid({ questions: [credQ({}, { host: "https://api.openai.com" })] }, /\.host must be/);
+    invalid({ questions: [credQ({}, { host: "" })] }, /\.host must be/);
+    invalid({ questions: [credQ({}, { path_prefix: "v1" })] }, /\.path_prefix must be/);
+    invalid({ questions: [credQ({}, { purpose: "" })] }, /\.purpose must be 1–200/);
+    invalid({ questions: [credQ({}, { purpose: "x".repeat(201) })] }, /\.purpose must be 1–200/);
+    invalid({ questions: [credQ({}, { purpose: "line\nbreak" })] }, /\.purpose must be 1–200/);
+    invalid({ questions: [credQ({}, { env_name: "openai_key" })] }, /\.env_name must match/);
+    invalid({ questions: [credQ({}, { base_url_env_name: "A" })] }, /\.base_url_env_name must match/);
+    invalid({ questions: [credQ({}, { rotate: "yes" })] }, /\.rotate must be a boolean/);
+    invalid({ questions: [credQ({ credential: "nope" })] }, /credential must be an object/);
+  });
+
+  test("a plain question with credential: null stays valid and carries no credential", () => {
+    const tool = makeTool(async () => ({ answers: [{ selected: ["SQLite"] }] }));
+    const input = tool.validate({ questions: [{ ...SINGLE_Q, credential: null }] });
+    expect(input.questions[0]!.credential).toBeUndefined();
+  });
+
+  test("a plain question still needs 2-4 options", () => {
+    invalid({ questions: [{ question: "Q?", header: "H" }] }, /options must be an array of 2–4 entries/);
+  });
+
+  test("schema describes credential, never says password, and no longer requires options", () => {
+    expect(tool.description).toContain("ask ONE question with `credential` and no other questions");
+    expect(tool.description).toContain("ask again with `rotate: true`");
+    expect(JSON.stringify(tool.input_schema).toLowerCase()).not.toContain("password");
+    expect(tool.description.toLowerCase()).not.toContain("password");
+    const item = (tool.input_schema.properties.questions.items as { required: string[] });
+    expect(item.required).toEqual(["question", "header"]);
+  });
+
+  test("rendering passes the handler text through and adds nothing from the input", async () => {
+    const hostText = "Credential stored in the vault for api.openai.com. Use $OPENAI_API_KEY.";
+    const credTool = makeTool(async () => ({ answers: [{ selected: [hostText] }] }));
+    const input = credTool.validate({ questions: [credQ({}, { env_name: "OPENAI_API_KEY" })] });
+    const result = await credTool.execute(input, makeCtx());
+    expect(result.is_error).toBeFalsy();
+    expect(result.content).toBe(
+      `User answered:\n\n[OpenAI key] Need an OpenAI key\n→ ${hostText}`,
+    );
+  });
+
+  test("the handler receives the validated credential question", async () => {
+    let seen: unknown;
+    const credTool = makeTool(async (req) => {
+      seen = req.questions[0]!.credential;
+      return { answers: [{ selected: ["ok"] }] };
+    });
+    await credTool.execute(credTool.validate({ questions: [credQ({}, { request_id: "r1" })] }), makeCtx());
+    expect(seen).toEqual({ ...cred });
+  });
+});

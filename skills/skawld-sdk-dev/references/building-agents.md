@@ -209,6 +209,30 @@ new Agent({ provider, model, askUser });
 - Returning `{ declined: true }` tells the model the user opted out; the run continues.
 - The handler receives the run's `AbortSignal`; honor it for cancellable prompts.
 
+### Credential questions
+
+A question may carry `credential` (`AskUserCredential`: `host`, optional `path_prefix`, `purpose`, optional `env_name`,
+`base_url_env_name`, `rotate`) to ask for an API key or token. It must be the **only** question and has `options: []`.
+Detect it with `q.credential`, never with `options.length`. `validate()` copies only the known credential fields, so
+anything else the model sends (for example `request_id`) is dropped.
+
+The SDK never shows the user's input to the model for a credential question: it renders only the text your handler
+returns. Collect the value outside the model's context (a secure form that writes to a vault), and return value-free
+text such as which host was bound and which env names to use:
+
+```ts
+const askUser: AskUserHandler = async (req) => {
+  const q = req.questions[0];
+  if (q.credential) {
+    const outcome = await collectIntoVault(q.credential);          // never returns the value
+    return { answers: [{ selected: [outcome.summaryWithoutValue] }] };
+  }
+  // ...normal questions
+};
+```
+
+`rotate: true` means the stored key for that host stopped working and the user should replace it.
+
 ## MCP servers
 
 📖 Docs: https://skawld.com/docs/mcp
@@ -228,6 +252,10 @@ new Agent({
 ```
 
 Config shape mirrors the Claude Agent SDK (`McpStdioServerConfig` | `McpHttpServerConfig`). stdio is assumed when `type` is absent. A connect failure throws from `session()`. For lower-level control, `connectMcpServers(configs)` is exported from `@privos_ai/privos-agent-sdk` and returns an `McpConnection` (`tools`, `close()`).
+
+`AgentOptions.mcpExtraEnv` (or `connectMcpServers(configs, { extraEnv })`) is a `(serverName) => Record<string, string>`
+callback for host-supplied env on **stdio** servers. Its values sit over the safe base env and under the server's own
+`env`, so a server that pins a variable keeps it. Pass relay tokens or relay URLs, never raw secrets.
 
 ## Skills
 

@@ -112,4 +112,19 @@ describe("stdioChildEnv", () => {
     expect(env[SECRET]).toBe("hunter2");
     expect(env.SOME_OTHER_HOST_VAR).toBeUndefined();
   });
+
+  test("extraEnv is layered over the base and under explicit env", () => {
+    const env = stdioChildEnv(
+      { command: "srv", env: { B: "explicit" } },
+      { A: "extra", B: "extra", PATH: "/extra/bin" },
+    );
+    expect(env.A).toBe("extra");
+    expect(env.B).toBe("explicit");
+    expect(env.PATH).toBe("/extra/bin");
+  });
+
+  test("extraEnv does not open up the host env", () => {
+    const env = stdioChildEnv({ command: "srv" }, { A: "extra" });
+    expect(env[SECRET]).toBeUndefined();
+  });
 });

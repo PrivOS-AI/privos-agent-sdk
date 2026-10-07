@@ -165,6 +165,14 @@ export class AskUserTool implements Tool<AskUserInput> {
       }
       const qObj = q as Record<string, unknown>;
 
+      const credential = qObj.credential == null ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
+      // The host never shows a credential question's own text to the user, so a model that leaves it out
+      // should not fail the call and retry; fill in neutral text instead.
+      if (credential) {
+        if (typeof qObj.question !== "string" || qObj.question.trim() === "") qObj.question = credential.purpose;
+        if (typeof qObj.header !== "string" || qObj.header.trim() === "") qObj.header = "API key";
+      }
+
       if (typeof qObj.question !== "string" || qObj.question.trim() === "") {
         throw new ToolExecutionError(`questions[${qi}].question must be a non-empty string`, { tool_name: this.name });
       }
@@ -174,8 +182,6 @@ export class AskUserTool implements Tool<AskUserInput> {
       if (qObj.header.length > 12) {
         throw new ToolExecutionError(`questions[${qi}].header must be at most 12 characters`, { tool_name: this.name });
       }
-
-      const credential = qObj.credential == null ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
 
       let options: AskUserOption[] = [];
       if (credential) {

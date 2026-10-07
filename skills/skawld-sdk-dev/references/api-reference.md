@@ -14,6 +14,7 @@ interface AgentOptions {
   model: ModelId;                         // REQUIRED — model id string; no SDK default
   tools?: ToolRegistry;                   // default: defaultTools() (the 10 built-ins)
   mcpServers?: Record<string, McpServerConfig>;  // keyed by server name; tools exposed as mcp__<server>__<tool>
+  mcpExtraEnv?: (serverName: string) => Record<string, string>; // extra env for stdio MCP servers; under the server's own env
   permissions?: {
     mode?: PermissionMode;               // "default" | "acceptEdits" | "yolo"; default "default"
     rules?: PermissionRule[];            // evaluated in order, before mode default

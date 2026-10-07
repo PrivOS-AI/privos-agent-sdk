@@ -41,6 +41,7 @@ import {
   type ThinkingConfig,
 } from "./base.js";
 import { readRetryAfter, readStatus } from "./http-error-fields.js";
+import { sanitizeLoneSurrogates } from "./lone-surrogates.js";
 import { withRetryableStream } from "./retry.js";
 import { tolerantSseFetch, type MalformedEventHandler } from "./sse-tolerance.js";
 
@@ -59,6 +60,12 @@ export interface AnthropicProviderOptions {
   tolerantStreaming?: boolean;
   /** Called with the raw text of each dropped SSE event; must not throw. */
   onMalformedEvent?: MalformedEventHandler;
+  /**
+   * Strip unpaired UTF-16 surrogates (a half-cut emoji) from every string in each
+   * outgoing request. Gateways reject such a request outright (Z.ai: HTTP 500
+   * "surrogates not allowed"). Default: true.
+   */
+  sanitizeLoneSurrogates?: boolean;
 }
 
 const KNOWN_ANTHROPIC_CONTEXT: Record<string, number> = {
@@ -406,6 +413,7 @@ export class AnthropicProvider extends BaseProvider {
   protected client: AnthropicWireClient;
   protected thinking?: ThinkingConfig;
   protected effort?: EffortLevel;
+  private readonly sanitizeLoneSurrogates: boolean;
 
   constructor(opts: AnthropicProviderOptions = {}) {
     super();
@@ -416,6 +424,7 @@ export class AnthropicProvider extends BaseProvider {
     if (opts.tolerantStreaming !== false) {
       init.fetch = tolerantSseFetch({ onMalformedEvent: opts.onMalformedEvent });
     }
+    this.sanitizeLoneSurrogates = opts.sanitizeLoneSurrogates !== false;
     this.client = new Anthropic(init) as unknown as AnthropicWireClient;
     if (opts.thinking !== undefined) this.thinking = opts.thinking;
     if (opts.effort !== undefined) this.effort = opts.effort;
@@ -431,7 +440,8 @@ export class AnthropicProvider extends BaseProvider {
     signal: AbortSignal,
     maxRetries: number,
   ): WireStream {
-    return this.client.messages.stream(payload, { signal, maxRetries });
+    const outgoing = this.sanitizeLoneSurrogates ? sanitizeLoneSurrogates(payload) : payload;
+    return this.client.messages.stream(outgoing, { signal, maxRetries });
   }
 
   async *stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent> {

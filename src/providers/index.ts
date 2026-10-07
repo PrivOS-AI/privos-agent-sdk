@@ -18,6 +18,10 @@ export {
   type TolerantSseOptions,
 } from "./sse-tolerance.js";
 export {
+  sanitizeLoneSurrogates,
+  stripLoneSurrogates,
+} from "./lone-surrogates.js";
+export {
   AnthropicProvider,
   type AnthropicProviderOptions,
 } from "./anthropic.js";

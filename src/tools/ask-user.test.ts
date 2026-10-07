@@ -529,6 +529,20 @@ describe("AskUserTool credential questions", () => {
     invalid({ questions: [credQ({ credential: "nope" })] }, /credential must be an object/);
   });
 
+  test("a credential question without header or question text gets neutral defaults", () => {
+    const tool = makeTool(async () => ({ answers: [{ selected: ["x"] }] }));
+    const input = tool.validate({ questions: [{ credential: { host: "api.example.com", purpose: "Read the weekly report" } }] });
+    expect(input.questions[0]!.header).toBe("API key");
+    expect(input.questions[0]!.question).toBe("Read the weekly report");
+    expect(input.questions[0]!.credential!.host).toBe("api.example.com");
+  });
+
+  test("a plain question still needs header and question text", () => {
+    const tool = makeTool(async () => ({ answers: [{ selected: ["x"] }] }));
+    expect(() => tool.validate({ questions: [{ ...SINGLE_Q, header: "" }] })).toThrow(/header must be a non-empty string/);
+    expect(() => tool.validate({ questions: [{ ...SINGLE_Q, question: "" }] })).toThrow(/question must be a non-empty string/);
+  });
+
   test("a plain question with credential: null stays valid and carries no credential", () => {
     const tool = makeTool(async () => ({ answers: [{ selected: ["SQLite"] }] }));
     const input = tool.validate({ questions: [{ ...SINGLE_Q, credential: null }] });

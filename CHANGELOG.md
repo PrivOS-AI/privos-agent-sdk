@@ -2,6 +2,14 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.4.1] — 2026-10-08
+
+### Fixed
+
+- A credential `AskUser` question no longer fails validation when the model leaves out `header` or `question`; they
+  default to "API key" and the credential's `purpose`, since the host never shows that text. Plain questions still
+  require both.
+
 ## [0.4.0] — 2026-10-07
 
 Additive release; every input that was valid in 0.3.0 stays valid.

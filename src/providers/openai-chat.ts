@@ -24,6 +24,7 @@ import {
   type SystemBlock,
 } from "./base.js";
 import { AbortError } from "../core/errors.js";
+import { sanitizeLoneSurrogates } from "./lone-surrogates.js";
 import { mapOpenAIError } from "./openai-errors.js";
 import { withRetryableStream } from "./retry.js";
 import { tolerantSseFetch, type MalformedEventHandler } from "./sse-tolerance.js";
@@ -41,6 +42,12 @@ export interface OpenAIChatProviderOptions {
   tolerantStreaming?: boolean;
   /** Called with the raw text of each dropped SSE event; must not throw. */
   onMalformedEvent?: MalformedEventHandler;
+  /**
+   * Strip unpaired UTF-16 surrogates (a half-cut emoji) from every string in each
+   * outgoing request. Gateways reject such a request outright (Z.ai: HTTP 500
+   * "surrogates not allowed"). Default: true.
+   */
+  sanitizeLoneSurrogates?: boolean;
 }
 
 const KNOWN_OPENAI_CONTEXT: Record<string, number> = {
@@ -414,6 +421,7 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
   readonly id = "openai-chat";
   protected client: OpenAIWireClient;
   protected contextWindowOverride?: (model: ModelId) => number | undefined;
+  private readonly sanitizeLoneSurrogates: boolean;
 
   constructor(opts: OpenAIChatProviderOptions = {}) {
     super();
@@ -424,6 +432,7 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
     if (opts.tolerantStreaming !== false) {
       init.fetch = tolerantSseFetch({ onMalformedEvent: opts.onMalformedEvent });
     }
+    this.sanitizeLoneSurrogates = opts.sanitizeLoneSurrogates !== false;
     this.client = new OpenAI(init) as unknown as OpenAIWireClient;
     if (opts.contextWindowOverride) {
       this.contextWindowOverride = opts.contextWindowOverride;
@@ -443,7 +452,8 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
     signal: AbortSignal,
     maxRetries: number,
   ): WireStream {
-    return this.client.chat.completions.stream(payload, { signal, maxRetries });
+    const outgoing = this.sanitizeLoneSurrogates ? sanitizeLoneSurrogates(payload) : payload;
+    return this.client.chat.completions.stream(outgoing, { signal, maxRetries });
   }
 
   async *stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent> {

@@ -21,6 +21,7 @@ import {
   type SystemBlock,
 } from "./base.js";
 import { AbortError } from "../core/errors.js";
+import { sanitizeLoneSurrogates } from "./lone-surrogates.js";
 import type { OpenAIChatProviderOptions } from "./openai-chat.js";
 import { mapOpenAIError } from "./openai-errors.js";
 import { withRetryableStream } from "./retry.js";
@@ -597,6 +598,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
   protected client: OpenAIWireClient;
   protected reasoning?: OpenAIResponsesReasoningOption;
   protected store?: boolean;
+  private readonly sanitizeLoneSurrogates: boolean;
 
   constructor(opts: OpenAIResponsesProviderOptions = {}) {
     super();
@@ -607,6 +609,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
     if (opts.tolerantStreaming !== false) {
       init.fetch = tolerantSseFetch({ onMalformedEvent: opts.onMalformedEvent });
     }
+    this.sanitizeLoneSurrogates = opts.sanitizeLoneSurrogates !== false;
     this.client = new OpenAI(init) as unknown as OpenAIWireClient;
     if (opts.reasoning) this.reasoning = opts.reasoning;
     if (opts.store !== undefined) this.store = opts.store;
@@ -621,7 +624,8 @@ export class OpenAIResponsesProvider extends BaseProvider {
     signal: AbortSignal,
     maxRetries: number,
   ): WireStream {
-    return this.client.responses.stream(payload, { signal, maxRetries });
+    const outgoing = this.sanitizeLoneSurrogates ? sanitizeLoneSurrogates(payload) : payload;
+    return this.client.responses.stream(outgoing, { signal, maxRetries });
   }
 
   async *stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent> {

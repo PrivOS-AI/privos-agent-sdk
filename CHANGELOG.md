@@ -2,6 +2,34 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.3.1] — 2026-10-07
+
+Patch release. A request changes only if one of its strings contains an unpaired UTF-16 surrogate,
+and then only by losing that one code unit; every other request is sent exactly as before.
+
+### Fixed
+
+- **Lone UTF-16 surrogates are stripped from every outgoing provider request.** Text cut through an
+  emoji (`text.slice(0, n)` over 📱) ends in an unpaired high surrogate. `JSON.stringify` writes it
+  as a `\ud83d` escape, the gateway decodes that back into a lone surrogate and cannot re-encode
+  the prompt as UTF-8, so it rejects the whole request (Z.ai answers HTTP 500
+  `surrogates not allowed`) and LiteLLM then takes the model offline for every tenant behind the
+  gateway. This is the 2026-10-07 incident: one half-cut emoji in a prompt left a shared gateway
+  without that model for ten minutes. `AnthropicProvider`, `OpenAIChatCompletionsProvider` and
+  `OpenAIResponsesProvider` now deep-copy the request payload with every unpaired half removed
+  (string values, array items and object keys; valid pairs, all other text and binary data are
+  untouched) right before it is handed to the provider SDK. The two OpenAI providers also clean the
+  request itself before the payload is built, so a lone half inside a replayed tool call's input is
+  removed before that input is serialized into the call's JSON `arguments` string.
+
+### Added
+
+- **`sanitizeLoneSurrogates?: boolean`** on `AnthropicProviderOptions` and
+  `OpenAIChatProviderOptions` (inherited by `OpenAIResponsesProviderOptions`). Default `true`; pass
+  `false` to send requests exactly as built.
+- `stripLoneSurrogates(text)` and `sanitizeLoneSurrogates(value)` are exported from
+  `@privos_ai/privos-agent-sdk/providers` for callers that assemble prompts outside the providers.
+
 ## [0.3.0] — 2026-08-13
 
 First stable release of the PrivOS fork. Published from a workstation, so this

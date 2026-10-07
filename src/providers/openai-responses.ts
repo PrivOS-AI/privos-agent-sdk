@@ -629,7 +629,14 @@ export class OpenAIResponsesProvider extends BaseProvider {
   }
 
   async *stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent> {
-    const payload = buildPayload(req, this.reasoning, this.store);
+    // Clean the request before it becomes a payload: buildPayload serializes a replayed tool call's
+    // input into a JSON `arguments` string, where a lone half is only escape text that the walk over
+    // the finished payload (in openStream) cannot see.
+    const payload = buildPayload(
+      this.sanitizeLoneSurrogates ? sanitizeLoneSurrogates(req) : req,
+      this.reasoning,
+      this.store,
+    );
     yield* withRetryableStream(
       () => this.streamAttempt(payload, req),
       {

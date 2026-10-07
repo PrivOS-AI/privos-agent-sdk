@@ -18,7 +18,9 @@ and then only by losing that one code unit; every other request is sent exactly 
   without that model for ten minutes. `AnthropicProvider`, `OpenAIChatCompletionsProvider` and
   `OpenAIResponsesProvider` now deep-copy the request payload with every unpaired half removed
   (string values, array items and object keys; valid pairs, all other text and binary data are
-  untouched) right before it is handed to the provider SDK.
+  untouched) right before it is handed to the provider SDK. The two OpenAI providers also clean the
+  request itself before the payload is built, so a lone half inside a replayed tool call's input is
+  removed before that input is serialized into the call's JSON `arguments` string.
 
 ### Added
 

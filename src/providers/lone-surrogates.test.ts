@@ -195,6 +195,21 @@ const providerCases: ProviderCase[] = [
   { name: "OpenAIResponsesProvider", model: "gpt-5", build: (o) => new OpenAIResponsesProvider({ ...GATEWAY, ...o }) },
 ];
 
+// Lone halves only inside a replayed tool call's input, so any escape on the wire comes from that input.
+function toolInputRequest(model: string): ProviderRequest {
+  return request(model, {
+    system: [],
+    messages: [
+      { role: "user", content: [{ type: "text", text: "search please" }] },
+      {
+        role: "assistant",
+        content: [{ type: "tool_use", id: "t1", name: "Search", input: { query: `bò${HIGH}`, tags: [`${LOW}tag`] } }],
+      },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "done" }] },
+    ],
+  });
+}
+
 for (const { name, model, build } of providerCases) {
   describe(`${name} request sanitizing`, () => {
     it("strips lone surrogates from the request body by default", async () => {
@@ -220,27 +235,29 @@ for (const { name, model, build } of providerCases) {
       expect(body).toContain("Tạo ảnh 1 con bò cười");
       expect(body).toMatch(LONE_HALF_ESCAPE);
     });
+
+    // The OpenAI providers serialize a replayed tool call's input into a JSON `arguments` string while
+    // the payload is built. There a lone half is only escape text that a walk over the payload cannot
+    // see, so it has to be removed from the request before the payload is built.
+    it("strips lone surrogates from a replayed tool-call input by default", async () => {
+      const { provider, bodies } = providerOnFakeWire(() => build({}));
+      await expect(drain(provider.stream(toolInputRequest(model)))).rejects.toBeInstanceOf(ProviderError);
+
+      expect(bodies).toHaveLength(1);
+      const body = bodies[0] ?? "";
+      expect(body).toContain("bò");
+      expect(body).toContain("tag");
+      expect(body).not.toMatch(LONE_HALF_ESCAPE);
+    });
+
+    it("sends a replayed tool-call input untouched when sanitizeLoneSurrogates is false", async () => {
+      const { provider, bodies } = providerOnFakeWire(() => build({ sanitizeLoneSurrogates: false }));
+      await expect(drain(provider.stream(toolInputRequest(model)))).rejects.toBeInstanceOf(ProviderError);
+
+      expect(bodies).toHaveLength(1);
+      const body = bodies[0] ?? "";
+      expect(body).toContain("bò");
+      expect(body).toMatch(LONE_HALF_ESCAPE);
+    });
   });
 }
-
-describe("AnthropicProvider tool-call inputs", () => {
-  it("strips lone surrogates from a replayed tool_use input", async () => {
-    const { provider, bodies } = providerOnFakeWire(() => new AnthropicProvider(GATEWAY));
-    const req = request("claude-opus-4-6", {
-      messages: [
-        { role: "user", content: [{ type: "text", text: "search please" }] },
-        {
-          role: "assistant",
-          content: [{ type: "tool_use", id: "t1", name: "Search", input: { query: `bò${HIGH}`, tags: [`${LOW}tag`] } }],
-        },
-        { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "done" }] },
-      ],
-    });
-    await expect(drain(provider.stream(req))).rejects.toBeInstanceOf(ProviderError);
-
-    const body = bodies[0] ?? "";
-    expect(body).toContain("bò");
-    expect(body).toContain("tag");
-    expect(body).not.toMatch(LONE_HALF_ESCAPE);
-  });
-});

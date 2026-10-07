@@ -175,7 +175,7 @@ export class AskUserTool implements Tool<AskUserInput> {
         throw new ToolExecutionError(`questions[${qi}].header must be at most 12 characters`, { tool_name: this.name });
       }
 
-      const credential = qObj.credential === undefined ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
+      const credential = qObj.credential == null ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
 
       let options: AskUserOption[] = [];
       if (credential) {

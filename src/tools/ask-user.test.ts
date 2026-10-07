@@ -529,6 +529,12 @@ describe("AskUserTool credential questions", () => {
     invalid({ questions: [credQ({ credential: "nope" })] }, /credential must be an object/);
   });
 
+  test("a plain question with credential: null stays valid and carries no credential", () => {
+    const tool = makeTool(async () => ({ answers: [{ selected: ["SQLite"] }] }));
+    const input = tool.validate({ questions: [{ ...SINGLE_Q, credential: null }] });
+    expect(input.questions[0]!.credential).toBeUndefined();
+  });
+
   test("a plain question still needs 2-4 options", () => {
     invalid({ questions: [{ question: "Q?", header: "H" }] }, /options must be an array of 2–4 entries/);
   });

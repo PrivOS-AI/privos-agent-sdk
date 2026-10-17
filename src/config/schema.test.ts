@@ -4,7 +4,7 @@ import { validateConfig, type ConfigWarning } from "./schema.js";
 
 function validate(raw: unknown) {
   const warnings: ConfigWarning[] = [];
-  const config = validateConfig(raw, { file: "/p/.skawld/config.json", warnings });
+  const config = validateConfig(raw, { file: "/p/.privos-agent-sdk/config.json", warnings });
   return { config, warnings };
 }
 
@@ -49,7 +49,7 @@ describe("validateConfig — unknown keys", () => {
     const { config, warnings } = validate({ output: "x", model: "m" });
     expect(config.model).toBe("m");
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatchObject({ pointer: "/output", file: "/p/.skawld/config.json" });
+    expect(warnings[0]).toMatchObject({ pointer: "/output", file: "/p/.privos-agent-sdk/config.json" });
   });
 
   test("unknown nested key → ConfigError with pointer", () => {

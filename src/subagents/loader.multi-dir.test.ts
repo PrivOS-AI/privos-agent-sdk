@@ -12,7 +12,7 @@ import { loadAgentsFromDir } from "./loader.js";
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), "skawld-agents-multidir-"));
+  root = await mkdtemp(path.join(tmpdir(), "privos-agent-agents-multidir-"));
 });
 
 afterEach(async () => {

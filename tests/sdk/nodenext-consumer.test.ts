@@ -6,7 +6,7 @@
  * had extensionless relative imports, producing 26+ TS2834 errors for any
  * NodeNext consumer. This test locks in the fix.
  *
- * Gated on SKAWLD_DIST_TEST (set only by `bun run test:dist`, which builds
+ * Gated on PRIVOS_AGENT_DIST_TEST (set only by `bun run test:dist`, which builds
  * first). Plain `bun test` skips this suite so the default fast path stays
  * unchanged.
  */
@@ -16,7 +16,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, symlinkSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-const distTestEnabled = !!process.env.SKAWLD_DIST_TEST;
+const distTestEnabled = !!process.env.PRIVOS_AGENT_DIST_TEST;
 
 const repoRoot = join(import.meta.dir, "..", "..");
 const fixtureDir = join(import.meta.dir, "fixtures", "nodenext-consumer");

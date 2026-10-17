@@ -15,7 +15,7 @@ import { MockProvider } from "./_test-mock-provider.js";
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), "skawld-agent-multidir-"));
+  root = await mkdtemp(path.join(tmpdir(), "privos-agent-agent-multidir-"));
 });
 
 afterEach(async () => {
@@ -83,11 +83,11 @@ describe("Agent configDir — multi-directory", () => {
     expect(ai.skills.get("twin")!.dir.startsWith(first)).toBe(true);
   });
 
-  it("empty array falls back to the .skawld default (no skills found)", async () => {
+  it("empty array falls back to the .privos-agent-sdk default (no skills found)", async () => {
     const agent = makeAgent([]);
     await agent.session();
     const ai = getAgentInternals(agent);
-    // No .skawld dir in the tmp cwd → nothing loads, and no crash.
+    // No .privos-agent-sdk dir in the tmp cwd → nothing loads, and no crash.
     expect(ai.skills.size).toBe(0);
     expect(ai.tools.get("Skill")).toBeUndefined();
   });

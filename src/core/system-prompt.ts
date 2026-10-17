@@ -14,8 +14,8 @@ export interface SystemPromptInputs {
   shell: string;
   /** Node version. */
   nodeVersion: string;
-  /** skawld package version. */
-  skawldVersion: string;
+  /** SDK package version. */
+  sdkVersion: string;
   /** Names of registered tools, in stable order. */
   toolNames: string[];
   /** Permission mode. */
@@ -23,7 +23,7 @@ export interface SystemPromptInputs {
 }
 
 export const BLOCK_A_IDENTITY = `
-You are skawld, an autonomous software engineering agent. You work inside a
+You are PrivOS Agent, an autonomous software engineering agent. You work inside a
 codebase on the user's computer, using the file and shell tools provided to
 read, modify, and run code. Your goal is to complete the user's coding task
 correctly and minimally.
@@ -60,7 +60,7 @@ function blockBEnvironment(inp: SystemPromptInputs): string {
   return `
 Environment:
 
-- skawld version: ${inp.skawldVersion}
+- PrivOS Agent SDK version: ${inp.sdkVersion}
 - Node: ${inp.nodeVersion}
 - OS: ${inp.os.platform} ${inp.os.release} (${inp.os.arch})
 - Shell: ${inp.shell}

@@ -9,7 +9,7 @@ import { InMemorySessionStore } from "./memory.js";
 import type { SessionStore } from "./store.js";
 
 function makeSqliteStore(): { store: SessionStore; cleanup: () => void } {
-  const dir = join(tmpdir(), `skawld-test-tasks-${crypto.randomUUID()}`);
+  const dir = join(tmpdir(), `privos-agent-test-tasks-${crypto.randomUUID()}`);
   const store = new SqliteSessionStore({ databasePath: join(dir, "sessions.db"), cwd: dir });
   return { store, cleanup: () => { store.close?.(); rmSync(dir, { recursive: true, force: true }); } };
 }

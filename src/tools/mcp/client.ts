@@ -1,5 +1,5 @@
 /**
- * Connect to MCP servers and expose their tools as skawld `Tool`s.
+ * Connect to MCP servers and expose their tools as SDK `Tool`s.
  *
  * `connectMcpServers` opens one client per configured server (stdio child
  * process or Streamable HTTP), lists each server's tools, and wraps them via
@@ -14,7 +14,7 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { CallToolResult, Tool as McpToolDefinition } from "@modelcontextprotocol/sdk/types.js";
 import type { Tool } from "../base.js";
 import { ConfigError } from "../../core/errors.js";
-import { SKAWLD_VERSION } from "../../core/version.js";
+import { PRIVOS_AGENT_SDK_VERSION } from "../../core/version.js";
 import { type McpServerConfig, type McpStdioServerConfig, mcpServerType } from "./config.js";
 import { buildMcpToolName, normalizeNameForMcp } from "./naming.js";
 import { makeMcpTool } from "./tool.js";
@@ -94,7 +94,7 @@ async function connectOne(
   config: McpServerConfig,
   options: McpConnectOptions,
 ): Promise<{ name: string; client: Client; config: McpServerConfig; mcpTools: McpToolDefinition[] }> {
-  const client = new Client({ name: "skawld", version: SKAWLD_VERSION }, { capabilities: {} });
+  const client = new Client({ name: "privos-agent-sdk", version: PRIVOS_AGENT_SDK_VERSION }, { capabilities: {} });
   await client.connect(createTransport(config, options.extraEnv?.(name)));
   try {
     const mcpTools = await listAllTools(client);

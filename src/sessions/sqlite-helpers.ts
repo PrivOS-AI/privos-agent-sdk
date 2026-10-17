@@ -6,7 +6,7 @@ import type { SessionRecord } from "./store.js";
 /**
  * Current SQLite user_version. Stamped via `PRAGMA user_version = ?` on every
  * open so a fresh DB always reflects this number. No migrator is provided —
- * the skawld SDK is unpublished, so a stale local dev DB can simply be deleted.
+ * the SDK was unpublished, so a stale local dev DB can simply be deleted.
  */
 export const SCHEMA_VERSION = 1;
 

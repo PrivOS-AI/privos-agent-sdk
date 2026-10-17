@@ -29,7 +29,7 @@ let configDir: string;
 let agentsDir: string;
 
 beforeEach(async () => {
-  configDir = await mkdtemp(path.join(tmpdir(), "skawld-subagent-e2e-"));
+  configDir = await mkdtemp(path.join(tmpdir(), "privos-agent-subagent-e2e-"));
   agentsDir = path.join(configDir, "agents");
   await mkdir(agentsDir, { recursive: true });
 });

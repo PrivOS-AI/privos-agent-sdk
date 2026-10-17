@@ -5,7 +5,7 @@
  * it validates the package.json `exports` map and the emitted output resolve
  * correctly through the package self-reference.
  *
- * Gated on the SKAWLD_DIST_TEST env var (set only by `bun run test:dist`, which
+ * Gated on the PRIVOS_AGENT_DIST_TEST env var (set only by `bun run test:dist`, which
  * builds first). A plain `bun test` leaves it unset and skips this suite — even
  * if a stale `dist/` from an earlier build is present, which an existence check
  * alone would wrongly run against. Imports are dynamic (inside the guarded
@@ -14,7 +14,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-const distTestEnabled = !!process.env.SKAWLD_DIST_TEST;
+const distTestEnabled = !!process.env.PRIVOS_AGENT_DIST_TEST;
 
 describe.skipIf(!distTestEnabled)("SDK surface — dist layer (published specifiers)", () => {
   test("main entry exports resolve from dist", async () => {
@@ -22,7 +22,7 @@ describe.skipIf(!distTestEnabled)("SDK surface — dist layer (published specifi
     expect(typeof sdk.Agent).toBe("function");
     expect(typeof sdk.Session).toBe("function");
     expect(typeof sdk.defaultTools).toBe("function");
-    expect(typeof sdk.SkawldError).toBe("function");
+    expect(typeof sdk.PrivOSAgentError).toBe("function");
     expect(typeof sdk.loadConfig).toBe("function");
     // defaultTools() builds a usable registry.
     const names = sdk.defaultTools().list().map((t: { name: string }) => t.name);

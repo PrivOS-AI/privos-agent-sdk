@@ -6,14 +6,14 @@ import path from "node:path";
 import { ConfigError } from "../core/errors.js";
 import {
   PERMISSION_MODES, PROVIDER_IDS, validateConfig,
-  type ConfigWarning, type ProviderId, type SkawldConfig,
+  type ConfigWarning, type ProviderId, type PrivOSAgentConfig,
 } from "./schema.js";
 
 export type { ConfigWarning } from "./schema.js";
 
 export interface LoadConfigOptions {
   cwd: string;
-  /** Override the project config path. Default: ${cwd}/.skawld/config.json. */
+  /** Override the project config path. Default: ${cwd}/.privos-agent-sdk/config.json. */
   projectConfigPath?: string;
   /** Skip the user config file even if it exists. */
   ignoreUserConfig?: boolean;
@@ -22,19 +22,19 @@ export interface LoadConfigOptions {
    * "acceptEdits"/"yolo") found in the PROJECT config file. Default false.
    */
   acceptProjectConfig?: boolean;
-  /** Programmatic overrides, already parsed into the SkawldConfig shape. */
-  overrides?: Partial<SkawldConfig>;
+  /** Programmatic overrides, already parsed into the PrivOSAgentConfig shape. */
+  overrides?: Partial<PrivOSAgentConfig>;
   /** Environment snapshot, default process.env. */
   env?: Record<string, string | undefined>;
 }
 
 export interface LoadedConfig {
-  config: SkawldConfig;
+  config: PrivOSAgentConfig;
   sources: Array<{ source: "default" | "user" | "project" | "env" | "override"; path?: string }>;
   warnings: ConfigWarning[];
 }
 
-/** A provider object that may omit `id` (e.g. the env layer with only SKAWLD_BASE_URL). */
+/** A provider object that may omit `id` (e.g. the env layer with only PRIVOS_AGENT_BASE_URL). */
 type PartialProvider = { id?: ProviderId; apiKey?: string; baseURL?: string; options?: Record<string, unknown> };
 
 export async function loadConfig(opts: LoadConfigOptions): Promise<LoadedConfig> {
@@ -42,7 +42,7 @@ export async function loadConfig(opts: LoadConfigOptions): Promise<LoadedConfig>
   const warnings: ConfigWarning[] = [];
   const sources: LoadedConfig["sources"] = [{ source: "default" }];
 
-  let merged: SkawldConfig = {};
+  let merged: PrivOSAgentConfig = {};
 
   // 2. User config — trusted, never gated.
   if (!opts.ignoreUserConfig) {
@@ -51,7 +51,7 @@ export async function loadConfig(opts: LoadConfigOptions): Promise<LoadedConfig>
     // are identical, so real usage is unchanged; the indirection keeps the loader
     // fully driven by its inputs and testable without mutating the global home.
     const homeDir = env.HOME ?? env.USERPROFILE ?? homedir();
-    const userPath = path.join(homeDir, ".skawld", "config.json");
+    const userPath = path.join(homeDir, ".privos-agent-sdk", "config.json");
     const raw = await readConfigFile(userPath);
     if (raw !== undefined) {
       const cfg = validateConfig(raw, { file: userPath, warnings });
@@ -62,7 +62,7 @@ export async function loadConfig(opts: LoadConfigOptions): Promise<LoadedConfig>
   }
 
   // 3. Project config — untrusted, gated.
-  const projectPath = path.resolve(opts.cwd, opts.projectConfigPath ?? env.SKAWLD_CONFIG ?? path.join(opts.cwd, ".skawld", "config.json"));
+  const projectPath = path.resolve(opts.cwd, opts.projectConfigPath ?? env.PRIVOS_AGENT_CONFIG ?? path.join(opts.cwd, ".privos-agent-sdk", "config.json"));
   const projectRaw = await readConfigFile(projectPath);
   if (projectRaw !== undefined) {
     const cfg = validateConfig(projectRaw, { file: projectPath, warnings });
@@ -111,12 +111,12 @@ async function readConfigFile(absPath: string): Promise<unknown> {
   }
 }
 
-function resolveSystemPromptFile(cfg: SkawldConfig, declaringDir: string): SkawldConfig {
+function resolveSystemPromptFile(cfg: PrivOSAgentConfig, declaringDir: string): PrivOSAgentConfig {
   if (cfg.systemPromptFile === undefined || path.isAbsolute(cfg.systemPromptFile)) return cfg;
   return { ...cfg, systemPromptFile: path.resolve(declaringDir, cfg.systemPromptFile) };
 }
 
-function warnApiKeyOnDisk(cfg: SkawldConfig, file: string, warnings: ConfigWarning[]): void {
+function warnApiKeyOnDisk(cfg: PrivOSAgentConfig, file: string, warnings: ConfigWarning[]): void {
   if (cfg.provider?.apiKey !== undefined) {
     warnings.push({
       file,
@@ -126,7 +126,7 @@ function warnApiKeyOnDisk(cfg: SkawldConfig, file: string, warnings: ConfigWarni
   }
 }
 
-function enforceProjectGate(cfg: SkawldConfig, file: string, accept: boolean): void {
+function enforceProjectGate(cfg: PrivOSAgentConfig, file: string, accept: boolean): void {
   if (accept) return;
   const offending: string[] = [];
   const mode = cfg.permissions?.mode;
@@ -142,52 +142,52 @@ function enforceProjectGate(cfg: SkawldConfig, file: string, accept: boolean): v
   }
 }
 
-function configFromEnv(env: Record<string, string | undefined>): SkawldConfig {
-  const out: SkawldConfig = {};
-  if (env.SKAWLD_MODEL !== undefined) out.model = env.SKAWLD_MODEL;
+function configFromEnv(env: Record<string, string | undefined>): PrivOSAgentConfig {
+  const out: PrivOSAgentConfig = {};
+  if (env.PRIVOS_AGENT_MODEL !== undefined) out.model = env.PRIVOS_AGENT_MODEL;
 
   const provider: PartialProvider = {};
-  if (env.SKAWLD_PROVIDER !== undefined) {
-    if (!PROVIDER_IDS.includes(env.SKAWLD_PROVIDER as ProviderId)) {
-      throw new ConfigError(`Invalid SKAWLD_PROVIDER "${env.SKAWLD_PROVIDER}": must be one of ${PROVIDER_IDS.join(", ")}`);
+  if (env.PRIVOS_AGENT_PROVIDER !== undefined) {
+    if (!PROVIDER_IDS.includes(env.PRIVOS_AGENT_PROVIDER as ProviderId)) {
+      throw new ConfigError(`Invalid PRIVOS_AGENT_PROVIDER "${env.PRIVOS_AGENT_PROVIDER}": must be one of ${PROVIDER_IDS.join(", ")}`);
     }
-    provider.id = env.SKAWLD_PROVIDER as ProviderId;
+    provider.id = env.PRIVOS_AGENT_PROVIDER as ProviderId;
   }
-  if (env.SKAWLD_BASE_URL !== undefined) provider.baseURL = env.SKAWLD_BASE_URL;
-  if (Object.keys(provider).length > 0) out.provider = provider as SkawldConfig["provider"];
+  if (env.PRIVOS_AGENT_BASE_URL !== undefined) provider.baseURL = env.PRIVOS_AGENT_BASE_URL;
+  if (Object.keys(provider).length > 0) out.provider = provider as PrivOSAgentConfig["provider"];
 
-  if (env.SKAWLD_PERMISSION_MODE !== undefined) {
-    if (!PERMISSION_MODES.includes(env.SKAWLD_PERMISSION_MODE as never)) {
-      throw new ConfigError(`Invalid SKAWLD_PERMISSION_MODE "${env.SKAWLD_PERMISSION_MODE}": must be one of ${PERMISSION_MODES.join(", ")}`);
+  if (env.PRIVOS_AGENT_PERMISSION_MODE !== undefined) {
+    if (!PERMISSION_MODES.includes(env.PRIVOS_AGENT_PERMISSION_MODE as never)) {
+      throw new ConfigError(`Invalid PRIVOS_AGENT_PERMISSION_MODE "${env.PRIVOS_AGENT_PERMISSION_MODE}": must be one of ${PERMISSION_MODES.join(", ")}`);
     }
-    out.permissions = { mode: env.SKAWLD_PERMISSION_MODE as never };
+    out.permissions = { mode: env.PRIVOS_AGENT_PERMISSION_MODE as never };
   }
 
-  if (env.SKAWLD_SYSTEM_PROMPT_FILE !== undefined) out.systemPromptFile = env.SKAWLD_SYSTEM_PROMPT_FILE;
+  if (env.PRIVOS_AGENT_SYSTEM_PROMPT_FILE !== undefined) out.systemPromptFile = env.PRIVOS_AGENT_SYSTEM_PROMPT_FILE;
 
-  if (env.SKAWLD_MAX_TURNS !== undefined) {
-    const n = Number(env.SKAWLD_MAX_TURNS);
+  if (env.PRIVOS_AGENT_MAX_TURNS !== undefined) {
+    const n = Number(env.PRIVOS_AGENT_MAX_TURNS);
     if (!Number.isInteger(n) || n < 1) {
-      throw new ConfigError(`Invalid SKAWLD_MAX_TURNS "${env.SKAWLD_MAX_TURNS}": must be an integer ≥ 1`);
+      throw new ConfigError(`Invalid PRIVOS_AGENT_MAX_TURNS "${env.PRIVOS_AGENT_MAX_TURNS}": must be an integer ≥ 1`);
     }
     out.limits = { maxTurns: n };
   }
 
-  if (env.SKAWLD_DB_PATH !== undefined) out.sessionStore = { kind: "sqlite", databasePath: env.SKAWLD_DB_PATH };
+  if (env.PRIVOS_AGENT_DB_PATH !== undefined) out.sessionStore = { kind: "sqlite", databasePath: env.PRIVOS_AGENT_DB_PATH };
 
   return out;
 }
 
 // --- merge ---
 
-function mergeConfig(base: SkawldConfig, next: SkawldConfig): SkawldConfig {
-  const out: SkawldConfig = { ...base };
+function mergeConfig(base: PrivOSAgentConfig, next: PrivOSAgentConfig): PrivOSAgentConfig {
+  const out: PrivOSAgentConfig = { ...base };
 
   if (next.provider !== undefined || base.provider !== undefined) {
-    out.provider = mergeDiscriminated(base.provider, next.provider, "id") as SkawldConfig["provider"];
+    out.provider = mergeDiscriminated(base.provider, next.provider, "id") as PrivOSAgentConfig["provider"];
   }
   if (next.sessionStore !== undefined || base.sessionStore !== undefined) {
-    out.sessionStore = mergeDiscriminated(base.sessionStore, next.sessionStore, "kind") as SkawldConfig["sessionStore"];
+    out.sessionStore = mergeDiscriminated(base.sessionStore, next.sessionStore, "kind") as PrivOSAgentConfig["sessionStore"];
   }
   if (next.model !== undefined) out.model = next.model;
   if (next.cwd !== undefined) out.cwd = next.cwd;
@@ -197,7 +197,7 @@ function mergeConfig(base: SkawldConfig, next: SkawldConfig): SkawldConfig {
   if (next.permissions !== undefined || base.permissions !== undefined) {
     const mode = next.permissions?.mode ?? base.permissions?.mode;
     const rules = [...(base.permissions?.rules ?? []), ...(next.permissions?.rules ?? [])];
-    const permissions: NonNullable<SkawldConfig["permissions"]> = {};
+    const permissions: NonNullable<PrivOSAgentConfig["permissions"]> = {};
     if (mode !== undefined) permissions.mode = mode;
     if (rules.length > 0) permissions.rules = rules;
     out.permissions = permissions;

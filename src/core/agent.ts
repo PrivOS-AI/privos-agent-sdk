@@ -1,7 +1,7 @@
 /** Agent class. See docs/05-agent-loop.html#agent. */
 
 import os from "node:os";
-import { SKAWLD_VERSION } from "./version.js";
+import { PRIVOS_AGENT_SDK_VERSION } from "./version.js";
 import { ConfigError } from "./errors.js";
 import { buildSystemBlocks } from "./system-prompt.js";
 import { PermissionEngine } from "../permissions/engine.js";
@@ -38,7 +38,7 @@ import type { AskUserHandler } from "../tools/ask-user.js";
 export interface AgentOptions {
   /** LLM provider. Required. */
   provider: BaseProvider;
-  /** Model id string. Required (skawld has no default). */
+  /** Model id string. Required (the SDK has no default). */
   model: ModelId;
   /** Tool registry. If omitted, defaults to the built-in tools. */
   tools?: ToolRegistry;
@@ -63,7 +63,7 @@ export interface AgentOptions {
   };
   /**
    * Where to persist sessions.
-   * Defaults to SqliteSessionStore at .skawld/sessions.db, constructed lazily on
+   * Defaults to SqliteSessionStore at .privos-agent-sdk/sessions.db, constructed lazily on
    * the first session() call so tests that supply their own store never touch disk.
    */
   sessionStore?: SessionStore;
@@ -102,7 +102,7 @@ export interface AgentOptions {
   /**
    * Per-project config directory (or directories). Skills are loaded from
    * `<configDir>/skills/<name>/SKILL.md` and subagents from `<configDir>/agents/`.
-   * Defaults to `".skawld"` resolved against `cwd`. Pass an absolute path to
+   * Defaults to `".privos-agent-sdk"` resolved against `cwd`. Pass an absolute path to
    * override.
    *
    * Accepts a `string[]` to load from several config directories at once (e.g.
@@ -110,7 +110,7 @@ export interface AgentOptions {
    * first-directory-wins precedence: when the same skill/agent name appears in
    * more than one directory, the earlier directory's copy is kept and later
    * duplicates are reported as skipped name-collisions. An empty array falls
-   * back to the `".skawld"` default. Missing directories are skipped silently.
+   * back to the `".privos-agent-sdk"` default. Missing directories are skipped silently.
    */
   configDir?: string | string[];
   /**
@@ -230,7 +230,7 @@ export class Agent {
       projectRoot: cwd,
     });
 
-    const skawldVersion = SKAWLD_VERSION;
+    const sdkVersion = PRIVOS_AGENT_SDK_VERSION;
 
     // Rebuildable so the tool-name list can be refreshed after MCP tools register.
     const buildBlocks = (toolNames: string[]): SystemBlock[] =>
@@ -240,7 +240,7 @@ export class Agent {
         os: { platform: process.platform, release: os.release(), arch: process.arch },
         shell: process.env.SHELL ?? "unknown",
         nodeVersion: process.version,
-        skawldVersion,
+        sdkVersion,
         toolNames,
         permissionMode: permMode,
       });
@@ -313,11 +313,11 @@ export class Agent {
     // Normalize configDir to a resolved list. A plain string yields a single
     // entry; a string[] yields one resolved entry per directory (searched in
     // array order). Empty/whitespace entries are dropped, and an empty result
-    // falls back to the ".skawld" default.
+    // falls back to the ".privos-agent-sdk" default.
     const configDirs = (Array.isArray(opts.configDir) ? opts.configDir : [opts.configDir])
       .filter((d): d is string => typeof d === "string" && d.length > 0)
       .map((d) => path.resolve(cwd, d));
-    if (configDirs.length === 0) configDirs.push(path.resolve(cwd, ".skawld"));
+    if (configDirs.length === 0) configDirs.push(path.resolve(cwd, ".privos-agent-sdk"));
     let _skillsConnect: Promise<void> | undefined;
     const connectSkills = (): Promise<void> => {
       if (!_skillsConnect) {

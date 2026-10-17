@@ -1,5 +1,5 @@
 /**
- * skawld agent with an external MCP server.
+ * PrivOS Agent SDK agent with an external MCP server.
  *
  * Requires:
  *   - ANTHROPIC_API_KEY in environment.
@@ -40,7 +40,7 @@ const session = await agent.session(); // connects the MCP server here
 console.log("Running agent with MCP tools…\n");
 
 for await (const event of session.run(
-  "Use the available MCP tools to echo back the message 'hello from skawld'.",
+  "Use the available MCP tools to echo back the message 'hello from privos-agent-sdk'.",
 )) {
   if (event.type === "assistant") {
     for (const block of event.message.content) {

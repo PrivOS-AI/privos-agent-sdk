@@ -1,4 +1,4 @@
-/** Public main entry for the `skawld` package. Curated re-export surface. */
+/** Public main entry for the `@privos_ai/privos-agent-sdk` package. Curated re-export surface. */
 
 // Top-level classes most consumers use.
 export { Agent } from "./core/agent.js";
@@ -52,7 +52,7 @@ export type {
 
 // Errors.
 export {
-  SkawldError, AuthError, RateLimitError, ContextLengthError,
+  PrivOSAgentError, AuthError, RateLimitError, ContextLengthError,
   PermissionDeniedError, ToolExecutionError, AbortError, ProviderError, ConfigError,
   SkillError, HookError,
 } from "./core/errors.js";
@@ -63,4 +63,4 @@ export type { CompactionStrategy } from "./core/compaction.js";
 // Config-file loading (opt-in; the SDK never calls loadConfig automatically).
 export { loadConfig } from "./config/loader.js";
 export type { LoadConfigOptions, LoadedConfig } from "./config/loader.js";
-export type { SkawldConfig, ConfigWarning } from "./config/schema.js";
+export type { PrivOSAgentConfig, ConfigWarning } from "./config/schema.js";

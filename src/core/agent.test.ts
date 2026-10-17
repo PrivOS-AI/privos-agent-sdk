@@ -4,7 +4,7 @@ import { Agent } from "./agent.js";
 import { getAgentInternals } from "./agent.js";
 import { ConfigError } from "./errors.js";
 import { InMemorySessionStore } from "../sessions/memory.js";
-import { SKAWLD_VERSION } from "./version.js";
+import { PRIVOS_AGENT_SDK_VERSION } from "./version.js";
 import type { BaseProvider } from "../providers/base.js";
 import type { PermissionRule } from "../permissions/rules.js";
 
@@ -87,7 +87,7 @@ describe("Agent constructor", () => {
     // back to 32768 internally because its API requires the field.
     expect(internal.maxOutputTokens).toBeUndefined();
     // Default tool-call concurrency cap is 10, resolved once at construction
-    // from SKAWLD_MAX_TOOL_CONCURRENCY env var.
+    // from PRIVOS_AGENT_MAX_TOOL_CONCURRENCY env var.
     expect(internal.toolConcurrency).toBe(10);
     expect(internal.includePartialMessages).toBe(false);
     expect(internal.maxTurns).toBe(Infinity);
@@ -115,26 +115,26 @@ describe("Agent constructor", () => {
     const internal = getAgentInternals(agent);
 
     const envBlock = internal.systemBlocks.find(b =>
-      b.text.includes("skawld version:")
+      b.text.includes("PrivOS Agent SDK version:")
     );
     expect(envBlock).toBeDefined();
-    expect(envBlock!.text).toContain(`skawld version: ${SKAWLD_VERSION}`);
+    expect(envBlock!.text).toContain(`PrivOS Agent SDK version: ${PRIVOS_AGENT_SDK_VERSION}`);
     expect(envBlock!.text).not.toContain("0.0.0-dev");
     // Confirm the constant itself is a real semver-shaped string, not the fallback.
-    expect(SKAWLD_VERSION).not.toBe("0.0.0-dev");
-    expect(SKAWLD_VERSION).toMatch(/^\d+\.\d+\.\d+/);
+    expect(PRIVOS_AGENT_SDK_VERSION).not.toBe("0.0.0-dev");
+    expect(PRIVOS_AGENT_SDK_VERSION).toMatch(/^\d+\.\d+\.\d+/);
   });
 
-  it("toolConcurrency observes SKAWLD_MAX_TOOL_CONCURRENCY at construction time", () => {
-    const prior = process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
-    process.env.SKAWLD_MAX_TOOL_CONCURRENCY = "3";
+  it("toolConcurrency observes PRIVOS_AGENT_MAX_TOOL_CONCURRENCY at construction time", () => {
+    const prior = process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
+    process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY = "3";
     try {
       const store = new InMemorySessionStore();
       const agent = new Agent({ provider: makeProvider(), model: "m", sessionStore: store });
       expect(getAgentInternals(agent).toolConcurrency).toBe(3);
     } finally {
-      if (prior === undefined) delete process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
-      else process.env.SKAWLD_MAX_TOOL_CONCURRENCY = prior;
+      if (prior === undefined) delete process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
+      else process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY = prior;
     }
   });
 
@@ -179,9 +179,9 @@ describe("Agent.session()", () => {
     const store = new InMemorySessionStore();
     const agent = new Agent({ provider: makeProvider(), model: "m", sessionStore: store });
 
-    const sess = await agent.session({ meta: { project: "skawld" } });
+    const sess = await agent.session({ meta: { project: "privos-agent-sdk" } });
     const record = await store.load(sess.id);
-    expect(record?.meta.project).toBe("skawld");
+    expect(record?.meta.project).toBe("privos-agent-sdk");
   });
 });
 
@@ -227,7 +227,7 @@ describe("Agent — shared permission rules array isolation (C4)", () => {
     await agentA.session();
     await agentB.session();
 
-    // The caller's array is untouched — no skawld-internal Skill rule leaked in.
+    // The caller's array is untouched — no privos-agent-internal Skill rule leaked in.
     expect(sharedRules).toEqual([{ kind: "tool", tool: "Read", decision: "allow" }]);
     expect(sharedRules.some(r => r.kind === "tool" && r.tool === "Skill")).toBe(false);
 

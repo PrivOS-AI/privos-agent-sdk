@@ -1,27 +1,26 @@
 # PrivOS Agent SDK
 
-A PrivOS-maintained fork of [skawld-sdk](https://github.com/skawld/skawld-sdk), published as
-`@privos_ai/privos-agent-sdk`. It carries two features that were needed downstream while the
-upstream pull requests waited for review, and is otherwise the upstream SDK: same runtime
-identifiers (`.skawld`, `SKAWLD_*`, `SkawldError`), same classes, exports and session format,
-so switching the import is the whole migration.
+An open-source TypeScript agent harness, published as `@privos_ai/privos-agent-sdk`
+(originally forked from [skawld-sdk](https://github.com/skawld/skawld-sdk) at upstream `7216fab`;
+upstream MIT licence and commit authorship are preserved, see [CHANGELOG.md](CHANGELOG.md)).
 
-- **`configDir` accepts an array** ([PR #1](https://github.com/skawld/skawld-sdk/pull/1)) — skills
-  and subagents load from several roots in first-directory-wins order. Passing a single string
-  behaves exactly as before.
-- **Tolerant SSE streaming** ([PR #2](https://github.com/skawld/skawld-sdk/pull/2)) — a malformed
-  frame mid-stream is repaired or dropped instead of aborting the whole run. Dropped frames are
-  surfaced to an optional observer, so a lossy stream is visible rather than silent.
+On top of the upstream code it adds:
 
-Lineage: upstream `7216fab` → PR #1 → PR #2. Upstream MIT licence and commit authorship are
-preserved; see [CHANGELOG.md](CHANGELOG.md).
+- **`configDir` accepts an array** — skills and subagents load from several roots in
+  first-directory-wins order. Passing a single string behaves exactly as before.
+- **Tolerant SSE streaming** — a malformed frame mid-stream is repaired or dropped instead of
+  aborting the whole run. Dropped frames are surfaced to an optional observer, so a lossy stream
+  is visible rather than silent.
+
+Since 0.5.0 every runtime identifier carries the PrivOS name (`${PRIVOS_SKILL_DIR}`,
+`PRIVOS_AGENT_*` environment variables, `.privos-agent-sdk/` config directory, `PrivOSAgentError`).
+The upstream names are removed, not aliased; the full rename table is in the
+[0.5.0 CHANGELOG entry](CHANGELOG.md).
 
 An open-source all-purpose TypeScript agent harness.
 Embed a full agent loop — tools, sessions, permissions, streaming events, subagents — into any Node.js or Bun application with a single import.
 
 Runs on **Node.js 18+** and **Bun 1.1+**. ESM-only.
-
-**Full documentation:** [https://skawld.com/docs](https://skawld.com/docs)
 
 ```sh
 # pick your package manager
@@ -76,8 +75,8 @@ Setup:
 ```sh
 export OPENAI_API_KEY=sk-...
 # optional overrides
-export SKAWLD_MODEL=gpt-5            # default: gpt-5
-export SKAWLD_CONFIG_DIR=./.skawld   # default: ./.skawld
+export PRIVOS_AGENT_MODEL=gpt-5            # default: gpt-5
+export PRIVOS_AGENT_CONFIG_DIR=./.privos-agent-sdk   # default: ./.privos-agent-sdk
 ```
 
 Run:
@@ -119,7 +118,7 @@ import {
 
 ## Sessions
 
-By default, sessions persist to SQLite at `.skawld/sessions.db`. For tests or embedded applications, pass a custom `sessionStore`, such as `InMemorySessionStore`.
+By default, sessions persist to SQLite at `.privos-agent-sdk/sessions.db`. For tests or embedded applications, pass a custom `sessionStore`, such as `InMemorySessionStore`.
 
 ```ts
 import { Agent } from "@privos_ai/privos-agent-sdk";

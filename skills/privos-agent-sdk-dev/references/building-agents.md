@@ -1,10 +1,8 @@
-# Skawld SDK — Building & Extending Agents
+# PrivOS Agent SDK — Building & Extending Agents
 
 How to extend the harness: permissions, sessions/stores, custom tools, MCP, skills, subagents.
 
 ## Permissions
-
-📖 Docs: https://skawld.com/docs/permissions
 
 Three layers, evaluated in this order per tool call: **validation → rules (in order) → mode default**. If the result is `"ask"`, the `canUseTool` callback is consulted.
 
@@ -60,8 +58,6 @@ new Agent({ provider, model, permissions: { mode: "default", canUseTool } });
 
 ## Hooks
 
-📖 Docs: https://skawld.com/docs/configuration
-
 Hooks are typed, in-process interception points the engine calls at five named moments. Pass them via `AgentOptions.hooks`; each event takes an array of registrations evaluated in order. Hooks are pure functions — no I/O assumptions — and must respect `ctx.signal`.
 
 ```ts
@@ -116,9 +112,7 @@ Per-event semantics:
 
 ## Sessions & stores
 
-📖 Docs: https://skawld.com/docs/sessions
-
-By default sessions persist to SQLite at `.skawld/sessions.db` (created lazily on first `session()`). Override with `sessionStore`.
+By default sessions persist to SQLite at `.privos-agent-sdk/sessions.db` (created lazily on first `session()`). Override with `sessionStore`.
 
 ```ts
 import { InMemorySessionStore, SqliteSessionStore } from "@privos_ai/privos-agent-sdk/sessions";
@@ -141,8 +135,6 @@ const resumed = await agent.session({ id: s1.id });   // reloads persisted messa
 To implement a fully custom backend, implement the `SessionStore` interface (`create`, `loadMessages`, `appendMessages`, `updateMeta`, `close`, plus task-persistence methods) exported from `@privos_ai/privos-agent-sdk/sessions`.
 
 ## Custom tools
-
-📖 Docs: https://skawld.com/docs/tools
 
 A tool implements the `Tool` interface (from `@privos_ai/privos-agent-sdk/tools`). Register it on a `ToolRegistry` and pass that as `AgentOptions.tools`.
 
@@ -185,8 +177,6 @@ Tool authoring rules:
 - Build a fresh registry with `new ToolRegistry()` (also from `/tools`) to fully control the tool set instead of starting from `defaultTools()`.
 
 ## AskUser tool
-
-📖 Docs: https://skawld.com/docs/tools
 
 The `AskUser` tool lets the model pause mid-run to ask the user clarifying questions (ambiguous requirements, multiple valid approaches, missing context, risky choices). It is registered **only** when you pass an `askUser` handler in `AgentOptions` — the embedding app owns how the questions are presented.
 
@@ -235,8 +225,6 @@ const askUser: AskUserHandler = async (req) => {
 
 ## MCP servers
 
-📖 Docs: https://skawld.com/docs/mcp
-
 Connect external MCP servers via `AgentOptions.mcpServers`. Their tools are exposed to the model as `mcp__<server>__<tool>`. Servers connect on the first `session()` and disconnect on `close()`.
 
 ```ts
@@ -259,9 +247,7 @@ callback for host-supplied env on **stdio** servers. Its values sit over the saf
 
 ## Skills
 
-📖 Docs: https://skawld.com/docs/skills
-
-Skills are markdown prompt-extensions auto-loaded from `<configDir>/skills/<name>/SKILL.md` (configDir defaults to `.skawld`). When skills exist, a `Skill` tool is registered so the model can invoke them. Informational skills (no `allowed_tools`, no `model`) are auto-allowed. `configDir` also accepts a `string[]` to merge skills (and agents) from several directories; directories are searched in array order with first-directory-wins precedence on name collisions.
+Skills are markdown prompt-extensions auto-loaded from `<configDir>/skills/<name>/SKILL.md` (configDir defaults to `.privos-agent-sdk`). When skills exist, a `Skill` tool is registered so the model can invoke them. Informational skills (no `allowed_tools`, no `model`) are auto-allowed. `configDir` also accepts a `string[]` to merge skills (and agents) from several directories; directories are searched in array order with first-directory-wins precedence on name collisions.
 
 `SKILL.md` frontmatter (YAML keys are snake_case):
 
@@ -285,8 +271,6 @@ Observe skill activity through `skills_loaded`, `skill_invoked`, and `skill_comp
 
 ## Subagents
 
-📖 Docs: https://skawld.com/docs/subagents
-
 Subagents are loaded from `<configDir>/agents/<name>.md`. A built-in default agent always exists, so a `Subagent` tool is registered on first `session()` even with no disk agents — the model can spawn child sessions. Child-session events are wrapped in `subagent_event` (filter by `subagent_run_id`; nesting is supported).
 
 Agent definition `<name>.md` frontmatter:
@@ -304,8 +288,6 @@ The markdown body becomes the subagent's system prompt.
 `tools` accepts an array or a comma-separated string; permission-pattern suffixes are stripped (`"Bash(npm:*)"` → `"Bash"`) since v1 has no per-arg subagent permissions. The parent run's `thinking`/`effort` cost knobs propagate to spawned subagents.
 
 ## Custom providers
-
-📖 Docs: https://skawld.com/docs/providers
 
 To target a model the built-in providers don't cover, extend `BaseProvider` (from `@privos_ai/privos-agent-sdk/providers`). Three members: `id`, `contextWindow(model)`, and an async `stream(req)` that yields `ProviderStreamEvent`s. The engine handles tools, permissions, sessions, and compaction — a provider only translates one request into a normalized event stream.
 
@@ -337,8 +319,6 @@ class MyProvider extends BaseProvider {
 `ProviderStreamEvent` union: `message_start` → (`text_delta` | `thinking_delta` | `tool_use_start` | `tool_use_input_delta` | `tool_use_end`)* → `message_end`. Respect `req.signal` and throw the SDK's typed errors (`AuthError`, `RateLimitError`, `ContextLengthError`, `AbortError`, `ProviderError`) so retries and compaction behave correctly.
 
 ## Custom compaction
-
-📖 Docs: https://skawld.com/docs/compaction
 
 `AgentOptions.compaction` takes a `CompactionStrategy`. The default keeps the last 10 turn boundaries and summarizes everything older into one synthetic user message, triggering when projected input tokens reach 80% of the model's context window. Override only when you need different retention/summarization.
 

@@ -21,7 +21,7 @@ describe("Task tools integration (SqliteSessionStore)", () => {
   const update = new TaskUpdateTool();
 
   beforeEach(async () => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-integ-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-integ-"));
     dbPath = path.join(tmpDir, "test.db");
     store = new SqliteSessionStore({ databasePath: dbPath });
     await store.create({ id: SESSION });

@@ -454,9 +454,9 @@ describe("OpenAIChatCompletionsProvider", () => {
 
 import { AbortError, ProviderError, RateLimitError } from "../core/errors.js";
 
-// Retry of the initial connection (429/5xx/network) is managed by Skawld so
+// Retry of the initial connection (429/5xx/network) is managed by the SDK so
 // all providers share the same backoff semantics. The SDK retry budget stays
-// disabled; req.max_retries controls Skawld's retry loop.
+// disabled; req.max_retries controls the SDK retry loop.
 describe("OpenAIChatCompletionsProvider — max_retries", () => {
   const okChunks: unknown[] = [
     { choices: [{ delta: { content: "ok" } }] },
@@ -480,7 +480,7 @@ describe("OpenAIChatCompletionsProvider — max_retries", () => {
     expect(captured).toBe(0);
   });
 
-  it("defaults to five Skawld retries when unset", async () => {
+  it("defaults to five SDK retries when unset", async () => {
     let opens = 0;
     class RetryProvider extends OpenAIChatCompletionsProvider {
       override openStream() {
@@ -496,7 +496,7 @@ describe("OpenAIChatCompletionsProvider — max_retries", () => {
     expect(opens).toBe(6);
   });
 
-  it("uses request max_retries as the Skawld retry budget", async () => {
+  it("uses request max_retries as the SDK retry budget", async () => {
     let opens = 0;
     class LateRateLimitProvider extends OpenAIChatCompletionsProvider {
       override openStream() {

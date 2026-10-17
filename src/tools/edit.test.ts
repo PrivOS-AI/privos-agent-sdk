@@ -29,7 +29,7 @@ function trackerWithFile(absPath: string): FileReadTracker {
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-edit-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-edit-test-"));
 });
 
 afterEach(() => {

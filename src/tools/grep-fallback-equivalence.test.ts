@@ -81,7 +81,7 @@ const CORPUS: Record<string, string> = {
 };
 
 beforeAll(async () => {
-  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "skawld-grep-equiv-"));
+  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "privos-agent-grep-equiv-"));
   for (const [rel, content] of Object.entries(CORPUS)) {
     const abs = path.join(fixtureDir, rel);
     await fs.promises.mkdir(path.dirname(abs), { recursive: true });
@@ -293,7 +293,7 @@ describe("Glob fallback equivalence", () => {
 
   // F1: the fallback honors .gitignore like `rg --files` does.
   it.skipIf(!hasRg)("G-S2: fallback respects .gitignore", async () => {
-    const giDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "skawld-glob-equiv-"));
+    const giDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "privos-agent-glob-equiv-"));
     try {
       await fs.promises.mkdir(path.join(giDir, "build"), { recursive: true });
       await fs.promises.writeFile(path.join(giDir, "keep.ts"), "x", "utf8");

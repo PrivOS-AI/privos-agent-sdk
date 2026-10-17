@@ -20,7 +20,7 @@ interface Harness {
 const STORES: Record<string, () => Harness> = {
   InMemorySessionStore: () => ({ store: new InMemorySessionStore(), cleanup: () => {} }),
   SqliteSessionStore: () => {
-    const dir = join(tmpdir(), `skawld-store-conf-${crypto.randomUUID()}`);
+    const dir = join(tmpdir(), `privos-agent-store-conf-${crypto.randomUUID()}`);
     const store = new SqliteSessionStore({ databasePath: join(dir, "sessions.db"), cwd: dir });
     return { store, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
   },

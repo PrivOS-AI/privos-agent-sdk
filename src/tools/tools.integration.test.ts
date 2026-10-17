@@ -26,7 +26,7 @@ function makeCtx(cwd: string, tracker: FileReadTracker): ToolContext {
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-integ-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-integ-"));
 });
 
 afterEach(() => {

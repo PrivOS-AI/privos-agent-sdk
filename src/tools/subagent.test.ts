@@ -20,7 +20,7 @@ let configDir: string;
 let agentsDir: string;
 
 beforeEach(async () => {
-  configDir = await mkdtemp(path.join(tmpdir(), "skawld-subagent-tool-"));
+  configDir = await mkdtemp(path.join(tmpdir(), "privos-agent-subagent-tool-"));
   agentsDir = path.join(configDir, "agents");
 });
 

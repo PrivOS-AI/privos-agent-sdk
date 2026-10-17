@@ -1,6 +1,4 @@
-# Skawld SDK — Built-in Tool Catalog
-
-📖 Docs: https://skawld.com/docs/tools
+# PrivOS Agent SDK — Built-in Tool Catalog
 
 `defaultTools()` returns a `ToolRegistry` with these ten tools (registered in this order). The model calls them by `name`; the schemas below are what it sees. Add your own with `registry.register(tool)` — see `building-agents.md` → Custom tools.
 

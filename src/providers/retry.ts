@@ -1,11 +1,11 @@
 /**
- * Retry a single request attempt that may throw a retryable SkawldError.
+ * Retry a single request attempt that may throw a retryable PrivOSAgentError.
  *
  * Honors RateLimitError.retry_after_seconds when present, otherwise exponential
  * backoff with jitter. Aborts immediately on signal.
  */
 
-import { AbortError, ConfigError, RateLimitError, SkawldError } from "../core/errors.js";
+import { AbortError, ConfigError, RateLimitError, PrivOSAgentError } from "../core/errors.js";
 
 export interface RetryOptions {
   /** Maximum total attempts (including the first). Default 5. */
@@ -50,7 +50,7 @@ function resolveOptions(opts: RetryOptions): ResolvedRetryOptions {
 }
 
 function isRetryable(err: unknown): boolean {
-  return err instanceof SkawldError && err.retryable;
+  return err instanceof PrivOSAgentError && err.retryable;
 }
 
 // Server-specified Retry-After is honored up to a higher cap than the backoff
@@ -95,7 +95,7 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 
 /**
  * Run `fn` up to `maxAttempts` times. Retries only when the thrown error
- * extends SkawldError with `retryable: true`. Honors AbortSignal.
+ * extends PrivOSAgentError with `retryable: true`. Honors AbortSignal.
  */
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,

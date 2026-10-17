@@ -1,5 +1,5 @@
 /**
- * Skawld starter app — a multi-turn terminal agent.
+ * PrivOS Agent SDK starter app — a multi-turn terminal agent.
  *
  * Demonstrates the full lifecycle: provider + tools + permission prompting +
  * SQLite session persistence + streaming + graceful shutdown.
@@ -41,7 +41,7 @@ const agent = new Agent({
   //   provider: new OpenAIResponsesProvider({ reasoning: { effort: "medium" } }), model: "gpt-5",
   tools: defaultTools(),
   permissions: { mode: "default", canUseTool },   // write/exec tools ask; reads are free
-  // Sessions persist to .skawld/sessions.db by default. Resume with: agent.session({ id })
+  // Sessions persist to .privos-agent-sdk/sessions.db by default. Resume with: agent.session({ id })
 });
 
 // One persistent session for the whole REPL — history carries across turns.

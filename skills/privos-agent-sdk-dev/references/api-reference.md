@@ -1,10 +1,8 @@
-# Skawld SDK — API Reference
+# PrivOS Agent SDK — API Reference
 
 Exact public signatures. Source of truth: `src/sdk.ts` (curated re-exports) and the modules it points to.
 
 ## AgentOptions
-
-📖 Docs: https://skawld.com/docs/agent
 
 Passed to `new Agent(opts)`. Only `provider` and `model` are required.
 
@@ -20,7 +18,7 @@ interface AgentOptions {
     rules?: PermissionRule[];            // evaluated in order, before mode default
     canUseTool?: CanUseTool;             // async callback for "ask" decisions
   };
-  sessionStore?: SessionStore;            // default: SqliteSessionStore at .skawld/sessions.db (lazy)
+  sessionStore?: SessionStore;            // default: SqliteSessionStore at .privos-agent-sdk/sessions.db (lazy)
   cwd?: string;                           // working dir for tools; default process.cwd()
   systemPrompt?: string;                  // appended AFTER the default system prompt
   compaction?: CompactionStrategy;        // default: built-in, triggers at 80% of context window
@@ -29,7 +27,7 @@ interface AgentOptions {
   includePartialMessages?: boolean;       // emit partial_assistant token deltas; default false
   maxTurns?: number;                      // hard cap on turns/run; default Infinity → TurnLimitError result on hit
   cacheTtl?: "5m" | "1h";                 // Anthropic prompt-cache TTL hint; default "5m"
-  configDir?: string | string[];          // dir(s) for skills/agents; default ".skawld" vs cwd; array = load from many, first-dir-wins
+  configDir?: string | string[];          // dir(s) for skills/agents; default ".privos-agent-sdk" vs cwd; array = load from many, first-dir-wins
   hooks?: Hooks;                          // typed interception points; see building-agents.md → Hooks
   askUser?: AskUserHandler;               // enables the AskUser tool; see building-agents.md → AskUser
 }
@@ -55,8 +53,6 @@ class Agent {
 ```
 
 ## Session & RunOptions
-
-📖 Docs: https://skawld.com/docs/sessions · the loop: https://skawld.com/docs/concepts
 
 ```ts
 class Session {
@@ -89,8 +85,6 @@ interface RunOptions {
 
 ## Event union
 
-📖 Docs: https://skawld.com/docs/events
-
 `session.run()` yields these. Discriminate on `event.type`. (All exported as types from `@privos_ai/privos-agent-sdk`.)
 
 | `type` | Key fields | Meaning |
@@ -117,8 +111,6 @@ Guard helpers `isSubagentEvent(e)` and `isHookErrorEvent(e)` are exported. Filte
 `result` is the terminal event — break the loop when you see it. `tokens_after` in `compaction` is always `0` (no local tokenizer); the real post-compaction input count appears in the next `usage` event.
 
 ## Providers
-
-📖 Docs: https://skawld.com/docs/providers
 
 ```ts
 import {
@@ -184,12 +176,10 @@ Known context windows are built in for common OpenAI models (`gpt-5` 400k, `gpt-
 
 ## Errors & lifecycle
 
-📖 Docs: errors https://skawld.com/docs/errors · compaction https://skawld.com/docs/compaction
-
-All extend `SkawldError`, exported from `@privos_ai/privos-agent-sdk`:
+All extend `PrivOSAgentError`, exported from `@privos_ai/privos-agent-sdk`:
 
 ```ts
-SkawldError, AuthError, RateLimitError, ContextLengthError,
+PrivOSAgentError, AuthError, RateLimitError, ContextLengthError,
 PermissionDeniedError, ToolExecutionError, AbortError,
 ProviderError, ConfigError, SkillError, HookError
 ```
@@ -244,8 +234,6 @@ Iterate `message.content`, discriminating on `block.type`. Assistant text lives 
 
 ## SessionStore interface
 
-📖 Docs: https://skawld.com/docs/sessions
-
 Implement this to back sessions with a custom store (Postgres, Redis, …). Pass an instance as `AgentOptions.sessionStore`. Built-ins: `SqliteSessionStore`, `InMemorySessionStore` (from `@privos_ai/privos-agent-sdk/sessions`).
 
 ```ts
@@ -271,8 +259,6 @@ interface SessionStore {
 `SessionRecord` = `{ id, created_at, updated_at, meta, invokedSkills? }`. `StoredMessage` = `{ seq, appended_at, message }`. Task types are in `tools-catalog.md`.
 
 ## Built-in tools (`defaultTools()`)
-
-📖 Docs: https://skawld.com/docs/tools · full param tables: `tools-catalog.md`
 
 Ten tools, registered in this order: `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`, `TaskCreate`, `TaskList`, `TaskGet`, `TaskUpdate`.
 

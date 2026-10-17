@@ -1,5 +1,5 @@
 /**
- * Minimal skawld agent example.
+ * Minimal PrivOS Agent SDK agent example.
  *
  * Requires: ANTHROPIC_API_KEY in environment.
  * Run with: bun run examples/minimal-agent.ts

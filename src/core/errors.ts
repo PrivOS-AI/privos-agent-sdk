@@ -1,6 +1,6 @@
-/** Typed error hierarchy. Always throw a subclass of SkawldError. */
+/** Typed error hierarchy. Always throw a subclass of PrivOSAgentError. */
 
-export abstract class SkawldError extends Error {
+export abstract class PrivOSAgentError extends Error {
   abstract readonly kind: string;
   readonly retryable: boolean = false;
   constructor(message: string, options?: { cause?: unknown }) {
@@ -9,12 +9,12 @@ export abstract class SkawldError extends Error {
   }
 }
 
-export class AuthError extends SkawldError {
+export class AuthError extends PrivOSAgentError {
   override readonly kind = "auth";
   override readonly retryable = false;
 }
 
-export class RateLimitError extends SkawldError {
+export class RateLimitError extends PrivOSAgentError {
   override readonly kind = "rate_limit";
   override readonly retryable = true;
   readonly retry_after_seconds?: number;
@@ -24,12 +24,12 @@ export class RateLimitError extends SkawldError {
   }
 }
 
-export class ContextLengthError extends SkawldError {
+export class ContextLengthError extends PrivOSAgentError {
   override readonly kind = "context_length";
   override readonly retryable = false;
 }
 
-export class PermissionDeniedError extends SkawldError {
+export class PermissionDeniedError extends PrivOSAgentError {
   override readonly kind = "permission_denied";
   override readonly retryable = false;
   readonly tool_name: string;
@@ -41,7 +41,7 @@ export class PermissionDeniedError extends SkawldError {
   }
 }
 
-export class ToolExecutionError extends SkawldError {
+export class ToolExecutionError extends PrivOSAgentError {
   override readonly kind = "tool_execution";
   override readonly retryable = false;
   readonly tool_name: string;
@@ -51,12 +51,12 @@ export class ToolExecutionError extends SkawldError {
   }
 }
 
-export class AbortError extends SkawldError {
+export class AbortError extends PrivOSAgentError {
   override readonly kind = "abort";
   override readonly retryable = false;
 }
 
-export class ProviderError extends SkawldError {
+export class ProviderError extends PrivOSAgentError {
   override readonly kind = "provider";
   readonly status?: number;
   override readonly retryable: boolean;
@@ -67,12 +67,12 @@ export class ProviderError extends SkawldError {
   }
 }
 
-export class ConfigError extends SkawldError {
+export class ConfigError extends PrivOSAgentError {
   override readonly kind = "config";
   override readonly retryable = false;
 }
 
-export class SkillError extends SkawldError {
+export class SkillError extends PrivOSAgentError {
   override readonly kind = "skill";
   override readonly retryable = false;
   readonly skillName?: string;
@@ -83,7 +83,7 @@ export class SkillError extends SkawldError {
 }
 
 /** A SessionStore contract violation (missing session, dangling task edge, …). */
-export class SessionStoreError extends SkawldError {
+export class SessionStoreError extends PrivOSAgentError {
   override readonly kind = "session_store";
   override readonly retryable = false;
 }
@@ -95,7 +95,7 @@ export class SessionStoreError extends SkawldError {
  * Hook failures inside a run are otherwise surfaced as the non-terminal
  * `HookErrorEvent`, not by throwing.
  */
-export class HookError extends SkawldError {
+export class HookError extends PrivOSAgentError {
   override readonly kind = "hook";
   override readonly retryable = false;
 }

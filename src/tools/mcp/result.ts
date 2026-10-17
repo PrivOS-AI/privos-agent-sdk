@@ -1,7 +1,7 @@
 /**
- * Map an MCP `CallToolResult` into a skawld `ToolResult`.
+ * Map an MCP `CallToolResult` into an SDK `ToolResult`.
  *
- * skawld tool results carry only text and image content (see ToolResult in
+ * SDK tool results carry only text and image content (see ToolResult in
  * ../base.ts), so audio / embedded-resource blocks degrade to a text
  * placeholder. Mirrors Claude Code's `transformResultContent` minus the
  * blob-to-file persistence, which is out of scope for v1.
@@ -10,9 +10,9 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolResult } from "../base.js";
 
-type SkawldContentBlock = Exclude<ToolResult["content"], string>[number];
+type PrivOSAgentContentBlock = Exclude<ToolResult["content"], string>[number];
 
-function transformBlock(block: CallToolResult["content"][number]): SkawldContentBlock {
+function transformBlock(block: CallToolResult["content"][number]): PrivOSAgentContentBlock {
   switch (block.type) {
     case "text":
       return { type: "text", text: block.text };
@@ -42,7 +42,7 @@ function transformBlock(block: CallToolResult["content"][number]): SkawldContent
 }
 
 /** Build a short human-readable summary from the first text block. */
-function summarize(blocks: SkawldContentBlock[], isError: boolean): string {
+function summarize(blocks: PrivOSAgentContentBlock[], isError: boolean): string {
   const firstText = blocks.find((b): b is { type: "text"; text: string } => b.type === "text");
   const prefix = isError ? "error: " : "";
   if (firstText) {

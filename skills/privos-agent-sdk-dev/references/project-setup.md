@@ -1,6 +1,4 @@
-# Skawld SDK — Consumer Project Setup
-
-📖 Docs: install https://skawld.com/docs/install · quickstart https://skawld.com/docs/quickstart
+# PrivOS Agent SDK — Consumer Project Setup
 
 How to set up a fresh app that depends on `@privos_ai/privos-agent-sdk`. The package is **ESM-only** and ships NodeNext-clean `.d.ts`. Getting module resolution right is step 0.
 
@@ -74,14 +72,14 @@ Providers read these when constructed with no explicit `apiKey`. You can also pa
 
 ## On-disk layout the SDK reads
 
-Resolved against `cwd`; the config root defaults to `.skawld` (override with `AgentOptions.configDir`, which also accepts a `string[]` to load from several config roots, first-dir-wins).
+Resolved against `cwd`; the config root defaults to `.privos-agent-sdk` (override with `AgentOptions.configDir`, which also accepts a `string[]` to load from several config roots, first-dir-wins).
 
 ```
 your-app/
 ├── package.json
 ├── tsconfig.json
 ├── src/index.ts
-└── .skawld/                 # configDir (default)
+└── .privos-agent-sdk/                 # configDir (default)
     ├── sessions.db          # SqliteSessionStore (auto-created on first session)
     ├── skills/              # optional — auto-loaded skills
     │   └── <name>/SKILL.md
@@ -89,7 +87,7 @@ your-app/
         └── <name>.md
 ```
 
-Skills and subagents are picked up automatically on the first `agent.session()` call. See `building-agents.md` for their file formats. Add `.skawld/sessions.db` to `.gitignore`.
+Skills and subagents are picked up automatically on the first `agent.session()` call. See `building-agents.md` for their file formats. Add `.privos-agent-sdk/sessions.db` to `.gitignore`.
 
 ## Minimal runnable entrypoint
 

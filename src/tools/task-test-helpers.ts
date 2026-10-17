@@ -22,5 +22,5 @@ export function makeToolCtx(opts: MakeToolCtxOpts): ToolContext {
 }
 
 export function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "skawld-task-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-task-test-"));
 }

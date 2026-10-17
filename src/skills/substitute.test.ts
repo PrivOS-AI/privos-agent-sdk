@@ -53,9 +53,9 @@ describe("substituteSkillBody", () => {
     expect(out).toContain('got: a "b c"');
   });
 
-  it("substitutes ${SKAWLD_SKILL_DIR} and ${SKAWLD_SESSION_ID}", () => {
+  it("substitutes ${PRIVOS_SKILL_DIR} and ${PRIVOS_SESSION_ID}", () => {
     const out = substituteSkillBody({
-      skill: mkSkill("dir=${SKAWLD_SKILL_DIR} sid=${SKAWLD_SESSION_ID}"),
+      skill: mkSkill("dir=${PRIVOS_SKILL_DIR} sid=${PRIVOS_SESSION_ID}"),
       args: "",
       sessionId: "abc-123",
     });
@@ -81,7 +81,7 @@ describe("substituteSkillBody", () => {
   });
 
   it("is byte-identical across two calls with the same input", () => {
-    const skill = mkSkill("hi $name dir=${SKAWLD_SKILL_DIR}", ["name"]);
+    const skill = mkSkill("hi $name dir=${PRIVOS_SKILL_DIR}", ["name"]);
     const a = substituteSkillBody({ skill, args: "you", sessionId: "sid" });
     const b = substituteSkillBody({ skill, args: "you", sessionId: "sid" });
     expect(a).toBe(b);

@@ -131,25 +131,25 @@ describe("mergeAsyncGenerators", () => {
 });
 
 describe("getDefaultToolConcurrency", () => {
-  const originalEnv = process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
+  const originalEnv = process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
   afterEach(() => {
-    if (originalEnv === undefined) delete process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
-    else process.env.SKAWLD_MAX_TOOL_CONCURRENCY = originalEnv;
+    if (originalEnv === undefined) delete process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
+    else process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY = originalEnv;
   });
 
   test("returns 10 when env unset", () => {
-    delete process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
+    delete process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
     expect(getDefaultToolConcurrency()).toBe(10);
   });
 
   test("returns parsed int when env set to a positive number", () => {
-    process.env.SKAWLD_MAX_TOOL_CONCURRENCY = "25";
+    process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY = "25";
     expect(getDefaultToolConcurrency()).toBe(25);
   });
 
   test("falls back to 10 on garbage or non-positive values", () => {
     for (const v of ["abc", "", "0", "-1", "NaN"]) {
-      process.env.SKAWLD_MAX_TOOL_CONCURRENCY = v;
+      process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY = v;
       expect(getDefaultToolConcurrency()).toBe(10);
     }
   });

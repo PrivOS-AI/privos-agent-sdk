@@ -2,6 +2,32 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.0] — 2026-10-17
+
+Every runtime identifier inherited from upstream skawld-sdk now carries the PrivOS name.
+
+### BREAKING
+
+The old names are removed, not aliased. Code, skills and environments written for 0.4.x must be updated:
+
+| Kind | Before 0.5.0 | Since 0.5.0 |
+|---|---|---|
+| Skill variables (SKILL.md) | `${SKAWLD_SKILL_DIR}`, `${SKAWLD_SESSION_ID}` | `${PRIVOS_SKILL_DIR}`, `${PRIVOS_SESSION_ID}` |
+| Environment variables | `SKAWLD_MODEL`, `SKAWLD_PROVIDER`, `SKAWLD_BASE_URL`, `SKAWLD_PERMISSION_MODE`, `SKAWLD_SYSTEM_PROMPT_FILE`, `SKAWLD_MAX_TURNS`, `SKAWLD_DB_PATH`, `SKAWLD_CONFIG`, `SKAWLD_MAX_TOOL_CONCURRENCY` | `PRIVOS_AGENT_` + the same suffix |
+| User config | `~/.skawld/config.json` | `~/.privos-agent-sdk/config.json` |
+| Project config | `<cwd>/.skawld/config.json` | `<cwd>/.privos-agent-sdk/config.json` |
+| Default session DB | `<cwd>/.skawld/sessions.db` | `<cwd>/.privos-agent-sdk/sessions.db` |
+| Error class | `SkawldError` | `PrivOSAgentError` |
+| Types | `SkawldConfig`, `SkawldContentBlock` | `PrivOSAgentConfig`, `PrivOSAgentContentBlock` |
+| Version constant | `SKAWLD_VERSION` | `PRIVOS_AGENT_SDK_VERSION` |
+| Default system prompt | "You are skawld", "skawld version:" | "You are PrivOS Agent", "PrivOS Agent SDK version:" |
+| System prompt input field | `skawldVersion` | `sdkVersion` |
+| Bundled dev skill | `skills/skawld-sdk-dev/` | `skills/privos-agent-sdk-dev/` |
+| MCP client name | `skawld` | `privos-agent-sdk` |
+
+A SKILL.md that still writes `${SKAWLD_SKILL_DIR}` now reaches the model as literal text. A session DB at the old
+default path is not moved; pass `databasePath` to keep using it.
+
 ## [0.4.1] — 2026-10-08
 
 ### Fixed
@@ -85,7 +111,7 @@ the name-collision fix below. Everything below `0.2.0` is upstream
 
 - Package renamed to `@privos_ai/privos-agent-sdk`; repository is
   [PrivOS-AI/privos-agent-sdk](https://github.com/PrivOS-AI/privos-agent-sdk). Runtime
-  identifiers are untouched on purpose — `.skawld`, `SKAWLD_*`, `SkawldError`, class names,
+  identifiers are untouched on purpose — `.privos-agent-sdk`, `PRIVOS_AGENT_*`, `PrivOSAgentError`, class names,
   exports and the session format are all unchanged, so an existing consumer only swaps the
   import specifier.
 

@@ -22,7 +22,7 @@ function makeCtx(cwd: string, tracker?: FileReadTracker): ToolContext {
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-write-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-write-test-"));
 });
 
 afterEach(() => {

@@ -10,7 +10,7 @@ let home: string;
 let projectDir: string;
 
 beforeEach(() => {
-  root = mkdtempSync(path.join(tmpdir(), "skawld-cfg-"));
+  root = mkdtempSync(path.join(tmpdir(), "privos-agent-cfg-"));
   home = path.join(root, "home");
   projectDir = path.join(root, "project");
   mkdirSync(home, { recursive: true });
@@ -22,19 +22,19 @@ afterEach(() => {
 });
 
 function writeUser(obj: unknown) {
-  const p = path.join(home, ".skawld", "config.json");
+  const p = path.join(home, ".privos-agent-sdk", "config.json");
   mkdirSync(path.dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify(obj));
   return p;
 }
 function writeProject(obj: unknown) {
-  const p = path.join(projectDir, ".skawld", "config.json");
+  const p = path.join(projectDir, ".privos-agent-sdk", "config.json");
   mkdirSync(path.dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify(obj));
   return p;
 }
 function load(extra: Partial<Parameters<typeof loadConfig>[0]> = {}) {
-  // Isolate the user config from the real ~/.skawld by pinning HOME in the snapshot.
+  // Isolate the user config from the real ~/.privos-agent-sdk by pinning HOME in the snapshot.
   return loadConfig({ cwd: projectDir, ...extra, env: { HOME: home, ...extra.env } });
 }
 
@@ -46,7 +46,7 @@ describe("loadConfig — files", () => {
   });
 
   test("malformed JSON throws ConfigError naming the file", async () => {
-    const p = path.join(projectDir, ".skawld", "config.json");
+    const p = path.join(projectDir, ".privos-agent-sdk", "config.json");
     mkdirSync(path.dirname(p), { recursive: true });
     writeFileSync(p, "{ bad json");
     await expect(load()).rejects.toThrow(ConfigError);
@@ -64,9 +64,9 @@ describe("loadConfig — precedence", () => {
 
   test("env overrides project; override beats env", async () => {
     writeProject({ model: "project-model" });
-    const viaEnv = await load({ env: { SKAWLD_MODEL: "env-model" } });
+    const viaEnv = await load({ env: { PRIVOS_AGENT_MODEL: "env-model" } });
     expect(viaEnv.config.model).toBe("env-model");
-    const viaOverride = await load({ env: { SKAWLD_MODEL: "env-model" }, overrides: { model: "override-model" } });
+    const viaOverride = await load({ env: { PRIVOS_AGENT_MODEL: "env-model" }, overrides: { model: "override-model" } });
     expect(viaOverride.config.model).toBe("override-model");
   });
 
@@ -115,13 +115,13 @@ describe("loadConfig — discriminated unions", () => {
 
   test("env applies provider vars as one unit (baseURL merges onto same id)", async () => {
     writeUser({ provider: { id: "anthropic", apiKey: "sk-ant" } });
-    const { config } = await load({ env: { SKAWLD_BASE_URL: "https://proxy" } });
+    const { config } = await load({ env: { PRIVOS_AGENT_BASE_URL: "https://proxy" } });
     expect(config.provider).toEqual({ id: "anthropic", apiKey: "sk-ant", baseURL: "https://proxy" });
   });
 
   test("env provider id change replaces (drops apiKey), even with baseURL", async () => {
     writeUser({ provider: { id: "anthropic", apiKey: "sk-ant" } });
-    const { config } = await load({ env: { SKAWLD_PROVIDER: "openai-chat", SKAWLD_BASE_URL: "https://proxy" } });
+    const { config } = await load({ env: { PRIVOS_AGENT_PROVIDER: "openai-chat", PRIVOS_AGENT_BASE_URL: "https://proxy" } });
     expect(config.provider).toEqual({ id: "openai-chat", baseURL: "https://proxy" });
   });
 
@@ -136,12 +136,12 @@ describe("loadConfig — env vars", () => {
   test("maps every documented var", async () => {
     const { config } = await load({
       env: {
-        SKAWLD_MODEL: "m",
-        SKAWLD_PROVIDER: "openai-responses",
-        SKAWLD_BASE_URL: "https://b",
-        SKAWLD_PERMISSION_MODE: "acceptEdits",
-        SKAWLD_MAX_TURNS: "42",
-        SKAWLD_DB_PATH: "/db.sqlite",
+        PRIVOS_AGENT_MODEL: "m",
+        PRIVOS_AGENT_PROVIDER: "openai-responses",
+        PRIVOS_AGENT_BASE_URL: "https://b",
+        PRIVOS_AGENT_PERMISSION_MODE: "acceptEdits",
+        PRIVOS_AGENT_MAX_TURNS: "42",
+        PRIVOS_AGENT_DB_PATH: "/db.sqlite",
       },
     });
     expect(config.model).toBe("m");
@@ -151,39 +151,39 @@ describe("loadConfig — env vars", () => {
     expect(config.sessionStore).toEqual({ kind: "sqlite", databasePath: "/db.sqlite" });
   });
 
-  test("non-integer SKAWLD_MAX_TURNS → ConfigError naming the var", async () => {
-    await expect(load({ env: { SKAWLD_MAX_TURNS: "abc" } })).rejects.toThrow(/SKAWLD_MAX_TURNS/);
+  test("non-integer PRIVOS_AGENT_MAX_TURNS → ConfigError naming the var", async () => {
+    await expect(load({ env: { PRIVOS_AGENT_MAX_TURNS: "abc" } })).rejects.toThrow(/PRIVOS_AGENT_MAX_TURNS/);
   });
 
-  test("invalid SKAWLD_PROVIDER → ConfigError naming the var", async () => {
-    await expect(load({ env: { SKAWLD_PROVIDER: "claude" } })).rejects.toThrow(/SKAWLD_PROVIDER/);
+  test("invalid PRIVOS_AGENT_PROVIDER → ConfigError naming the var", async () => {
+    await expect(load({ env: { PRIVOS_AGENT_PROVIDER: "claude" } })).rejects.toThrow(/PRIVOS_AGENT_PROVIDER/);
   });
 
-  test("SKAWLD_CONFIG redirects the project file location and is gated", async () => {
+  test("PRIVOS_AGENT_CONFIG redirects the project file location and is gated", async () => {
     const alt = path.join(root, "alt-config.json");
     writeFileSync(alt, JSON.stringify({ model: "alt" }));
-    const { config, sources } = await load({ env: { SKAWLD_CONFIG: alt } });
+    const { config, sources } = await load({ env: { PRIVOS_AGENT_CONFIG: alt } });
     expect(config.model).toBe("alt");
     expect(sources.find((s) => s.source === "project")?.path).toBe(alt);
   });
 });
 
 describe("loadConfig — systemPromptFile resolution", () => {
-  test("project relative path resolves against the project .skawld dir", async () => {
+  test("project relative path resolves against the project .privos-agent-sdk dir", async () => {
     const p = writeProject({ systemPromptFile: "./instructions.md" });
     const { config } = await load();
     expect(config.systemPromptFile).toBe(path.resolve(path.dirname(p), "instructions.md"));
     expect(path.isAbsolute(config.systemPromptFile!)).toBe(true);
   });
 
-  test("user relative path resolves against the user .skawld dir", async () => {
+  test("user relative path resolves against the user .privos-agent-sdk dir", async () => {
     const p = writeUser({ systemPromptFile: "./u.md" });
     const { config } = await load();
     expect(config.systemPromptFile).toBe(path.resolve(path.dirname(p), "u.md"));
   });
 
   test("env path resolves against cwd", async () => {
-    const { config } = await load({ env: { SKAWLD_SYSTEM_PROMPT_FILE: "./e.md" } });
+    const { config } = await load({ env: { PRIVOS_AGENT_SYSTEM_PROMPT_FILE: "./e.md" } });
     expect(config.systemPromptFile).toBe(path.resolve(projectDir, "e.md"));
   });
 
@@ -263,7 +263,7 @@ describe("loadConfig — untrusted project gate", () => {
   });
 
   test("env permissive mode is never gated", async () => {
-    const { config } = await load({ env: { SKAWLD_PERMISSION_MODE: "yolo" } });
+    const { config } = await load({ env: { PRIVOS_AGENT_PERMISSION_MODE: "yolo" } });
     expect(config.permissions?.mode).toBe("yolo");
   });
 });

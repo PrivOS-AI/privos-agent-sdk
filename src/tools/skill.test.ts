@@ -65,7 +65,7 @@ describe("SkillTool", () => {
   });
 
   it("returns substituted body and records invocation on happy path", async () => {
-    const skill = mkSkill("greet", { arguments: ["who"] }, "Hello $who from ${SKAWLD_SKILL_DIR}.");
+    const skill = mkSkill("greet", { arguments: ["who"] }, "Hello $who from ${PRIVOS_SKILL_DIR}.");
     const si = mkSessionInternal();
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),

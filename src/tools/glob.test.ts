@@ -25,7 +25,7 @@ function makeCtx(cwd: string): ToolContext {
 }
 
 beforeAll(async () => {
-  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "skawld-glob-"));
+  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "privos-agent-glob-"));
 
   // Create a small fixture tree:
   //  a/

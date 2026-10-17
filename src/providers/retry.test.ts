@@ -77,7 +77,7 @@ describe("withRetry", () => {
     expect(calls).toBe(1);
   });
 
-  it("rethrows non-SkawldError without retry", async () => {
+  it("rethrows non-PrivOSAgentError without retry", async () => {
     let calls = 0;
     await expect(
       withRetry(

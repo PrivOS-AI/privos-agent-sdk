@@ -761,9 +761,9 @@ describe("AnthropicProvider", () => {
     expect(aborted).toBe(true);
   });
 
-  // Retry of the initial connection (429/5xx/network) is managed by Skawld so
+  // Retry of the initial connection (429/5xx/network) is managed by the SDK so
   // all providers share the same backoff semantics. The SDK retry budget stays
-  // disabled; req.max_retries controls Skawld's retry loop.
+  // disabled; req.max_retries controls the SDK retry loop.
   const okEvents: unknown[] = [
     { type: "content_block_start", index: 0, content_block: { type: "text" } },
     { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "ok" } },
@@ -788,7 +788,7 @@ describe("AnthropicProvider", () => {
     expect(captured).toBe(0);
   });
 
-  it("defaults to five Skawld retries when unset", async () => {
+  it("defaults to five SDK retries when unset", async () => {
     let opens = 0;
     class RetryProvider extends AnthropicProvider {
       override openStream() {
@@ -804,7 +804,7 @@ describe("AnthropicProvider", () => {
     expect(opens).toBe(6);
   });
 
-  it("uses request max_retries as the Skawld retry budget", async () => {
+  it("uses request max_retries as the SDK retry budget", async () => {
     let opens = 0;
     class LateRateLimitProvider extends AnthropicProvider {
       override openStream() {

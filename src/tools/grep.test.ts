@@ -50,7 +50,7 @@ const FIXTURE_FILES: Record<string, string> = {
 };
 
 beforeAll(async () => {
-  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "skawld-grep-"));
+  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "privos-agent-grep-"));
   for (const [rel, content] of Object.entries(FIXTURE_FILES)) {
     const abs = path.join(fixtureDir, rel);
     await fs.promises.mkdir(path.dirname(abs), { recursive: true });

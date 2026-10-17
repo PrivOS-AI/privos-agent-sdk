@@ -135,7 +135,7 @@ export function truncateOutput(text: string, maxChars: number): string {
  *   4. Rename into place.
  *   5. Clean up temp on failure.
  *
- * Temp files are named `.tmp-skawld-<uuid>-<basename>` for easy identification.
+ * Temp files are named `.tmp-privos-agent-<uuid>-<basename>` for easy identification.
  */
 export async function atomicWriteFile(absPath: string, content: string): Promise<void> {
   // Canonicalize first so an edit through a symlink writes *through* the link
@@ -144,7 +144,7 @@ export async function atomicWriteFile(absPath: string, content: string): Promise
   const canonical = canonicalizePath(absPath);
   const dir = path.dirname(canonical);
   const base = path.basename(canonical);
-  const tmp = path.join(dir, `.tmp-skawld-${randomUUID()}-${base}`);
+  const tmp = path.join(dir, `.tmp-privos-agent-${randomUUID()}-${base}`);
 
   // Determine existing mode so we can preserve it.
   let existingMode: number | undefined;

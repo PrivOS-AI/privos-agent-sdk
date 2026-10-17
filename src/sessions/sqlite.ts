@@ -31,7 +31,7 @@ export class SqliteSessionStore implements SessionStore {
 
   constructor(opts: SqliteSessionStoreOptions = {}) {
     const cwd = opts.cwd ?? process.cwd();
-    const path = opts.databasePath ?? join(cwd, ".skawld", "sessions.db");
+    const path = opts.databasePath ?? join(cwd, ".privos-agent-sdk", "sessions.db");
     mkdirSync(dirname(path), { recursive: true });
     this.db = new DatabaseCtor(path);
     this.db.exec(MIGRATIONS_SQL);

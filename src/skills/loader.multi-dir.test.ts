@@ -17,7 +17,7 @@ const BUILTINS = new Set(["Read", "Write", "Edit", "Bash", "Glob", "Grep"]);
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), "skawld-skills-multidir-"));
+  root = await mkdtemp(path.join(tmpdir(), "privos-agent-skills-multidir-"));
 });
 
 afterEach(async () => {

@@ -74,7 +74,7 @@ describe("skills wiring — Agent + Session", () => {
       provider,
       model: "test-model",
       sessionStore: store,
-      configDir: "/tmp/skawld-no-such-dir",
+      configDir: "/tmp/privos-agent-no-such-dir",
     });
     await agent.session();
     const ai = getAgentInternals(agent);

@@ -1,6 +1,4 @@
-# Skawld SDK — Recipes
-
-📖 Docs: https://skawld.com/docs/quickstart (full index: https://skawld.com/docs)
+# PrivOS Agent SDK — Recipes
 
 Copy-paste patterns. All imports are from the four public subpaths. Runnable examples ship in the repo's `examples/` (`minimal-agent.ts`, `mcp-agent.ts`, `interactive-cli.ts`).
 
@@ -84,7 +82,7 @@ const agent = new Agent({
 ## 5. Resume a persisted session
 
 ```ts
-const agent = new Agent({ provider, model });   // default SqliteSessionStore at .skawld/sessions.db
+const agent = new Agent({ provider, model });   // default SqliteSessionStore at .privos-agent-sdk/sessions.db
 
 const first = await agent.session();
 for await (const e of first.run("Remember the number 42.")) if (e.type === "result") break;
@@ -160,7 +158,7 @@ import { defaultTools } from "@privos_ai/privos-agent-sdk/tools";
 
 const agent = new Agent({
   provider: new OpenAIResponsesProvider({ apiKey: process.env.OPENAI_API_KEY!, reasoning: { effort: "medium" } }),
-  model: process.env.SKAWLD_MODEL ?? "gpt-5",
+  model: process.env.PRIVOS_AGENT_MODEL ?? "gpt-5",
   tools: defaultTools(),
   permissions: { mode: "yolo" },
 });

@@ -16,7 +16,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as {
 const expected = pkg.version;
 
 const bundle = readFileSync(bundlePath, "utf8");
-const marker = `SKAWLD_VERSION = "${expected}"`;
+const marker = `PRIVOS_AGENT_SDK_VERSION = "${expected}"`;
 if (!bundle.includes(marker)) {
   console.error(`FAIL: "${marker}" not found in bundled sdk.js`);
   process.exit(1);

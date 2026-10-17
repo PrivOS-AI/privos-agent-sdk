@@ -1,5 +1,5 @@
 /**
- * Wrap a single MCP server tool as a skawld `Tool`.
+ * Wrap a single MCP server tool as an SDK `Tool`.
  *
  * The actual transport call is injected (`callTool`) so this module stays
  * connection-free and unit-testable. Scope and parallel-safety derive from the
@@ -21,7 +21,7 @@ export type McpCallTool = (
   signal: AbortSignal,
 ) => Promise<CallToolResult>;
 
-/** Coerce an MCP inputSchema into skawld's tool input_schema shape. */
+/** Coerce an MCP inputSchema into the SDK's tool input_schema shape. */
 function toInputSchema(mcpSchema: McpToolDefinition["inputSchema"]): ToolSchema["input_schema"] {
   const schema = mcpSchema as { properties?: Record<string, unknown>; required?: string[] };
   return {

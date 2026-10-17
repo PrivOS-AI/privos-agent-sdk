@@ -19,7 +19,7 @@ export interface StoredMessage {
   seq: number;
   /** ISO-8601 timestamp when the message was appended. */
   appended_at: string;
-  /** The message itself, in skawld's normalized shape. */
+  /** The message itself, in the SDK's normalized shape. */
   message: Message;
 }
 

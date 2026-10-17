@@ -1,4 +1,4 @@
-/** Public API for the `skawld/providers` subpath. */
+/** Public API for the `@privos_ai/privos-agent-sdk/providers` subpath. */
 
 export {
   BaseProvider,

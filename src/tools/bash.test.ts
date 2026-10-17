@@ -220,7 +220,7 @@ describe("BashTool", () => {
         expect(result.is_error).toBe(true);
         // Give the kill cascade time to complete
         await new Promise((r) => setTimeout(r, 2_500));
-        // Verify no skawld-spawned sleep processes linger by checking that
+        // Verify no privos-agent-spawned sleep processes linger by checking that
         // the child is marked killed (we trust the SIGKILL cascade did its job;
         // a stronger check would parse `ps` but that's platform-fragile)
         expect(result.content).toMatch(/timed out/i);

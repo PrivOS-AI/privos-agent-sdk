@@ -8,7 +8,7 @@ let configDir: string;
 let agentsDir: string;
 
 beforeEach(async () => {
-  configDir = await mkdtemp(path.join(tmpdir(), "skawld-agents-"));
+  configDir = await mkdtemp(path.join(tmpdir(), "privos-agent-agents-"));
   agentsDir = path.join(configDir, "agents");
 });
 
@@ -69,7 +69,7 @@ describe("loadAgentsFromDir", () => {
 
   it("ignores unknown frontmatter keys (Claude-compatible loading)", async () => {
     // Drop in a file that looks like it came from .claude/agents/ — lots of
-    // fields Skawld doesn't consume. None of them should surface in the parsed
+    // fields the SDK doesn't consume. None of them should surface in the parsed
     // frontmatter, but the agent itself must still load cleanly.
     await writeAgent(
       "claude-style.md",

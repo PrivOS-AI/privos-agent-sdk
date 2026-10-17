@@ -10,7 +10,7 @@ release-manifest.json
 node_modules
 dist
 coverage
-.skawld/
+.privos-agent-sdk/
 *.log
 .env
 .env.local

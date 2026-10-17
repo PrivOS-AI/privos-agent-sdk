@@ -110,7 +110,7 @@ function buildRequest(
     ...(effectiveMaxOutput !== undefined && { max_output_tokens: effectiveMaxOutput }),
     temperature: opts.temperature,
     cache_prompt: true,
-    // Skawld-managed provider retry budget. Provider adapters disable SDK
+    // SDK-managed provider retry budget. Provider adapters disable SDK
     // retries and apply this consistently around mapped retryable errors.
     max_retries: ai.maxRetries,
     signal,

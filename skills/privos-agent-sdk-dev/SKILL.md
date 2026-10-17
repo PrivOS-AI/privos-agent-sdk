@@ -1,17 +1,17 @@
 ---
-name: skawld-sdk-dev
-description: Build and run AI agents with the Skawld Agent SDK (@privos_ai/privos-agent-sdk), a TypeScript/Bun agent harness with tools, sessions, permissions, hooks, streaming events, MCP, skills, and subagents. Use this skill whenever the user is writing code against @privos_ai/privos-agent-sdk, importing Agent/Session/AnthropicProvider/OpenAIResponsesProvider/defaultTools, embedding an agent loop into a Node or Bun app, wiring custom tools, permission callbacks, hooks (preToolUse/postToolUse/userPromptSubmit/stop/preCompact), the AskUser tool, MCP servers, skills, or subagents, streaming agent events, steering or interrupting a run mid-flight, persisting/resuming sessions, or asks "how do I build an agent with skawld".
+name: privos-agent-sdk-dev
+description: Build and run AI agents with the PrivOS Agent SDK (@privos_ai/privos-agent-sdk), a TypeScript/Bun agent harness with tools, sessions, permissions, hooks, streaming events, MCP, skills, and subagents. Use this skill whenever the user is writing code against @privos_ai/privos-agent-sdk, importing Agent/Session/AnthropicProvider/OpenAIResponsesProvider/defaultTools, embedding an agent loop into a Node or Bun app, wiring custom tools, permission callbacks, hooks (preToolUse/postToolUse/userPromptSubmit/stop/preCompact), the AskUser tool, MCP servers, skills, or subagents, streaming agent events, steering or interrupting a run mid-flight, persisting/resuming sessions, or asks "how do I build an agent with the PrivOS Agent SDK".
 ---
 
-# Skawld Agent SDK Development
+# PrivOS Agent SDK Development
 
 ## Overview
 
-The Skawld Agent SDK (`@privos_ai/privos-agent-sdk`) is an open-source TypeScript agent harness for software-engineering tasks — a Claude Code-style agent loop you embed into any Node.js 18+ or Bun 1.1+ app with a single import. This skill teaches how to **use** the SDK (run an agent, stream events, persist sessions) and how to **build with** it (custom tools, permission callbacks, MCP servers, skills, subagents).
+The PrivOS Agent SDK (`@privos_ai/privos-agent-sdk`) is an open-source TypeScript agent harness for software-engineering tasks — a Claude Code-style agent loop you embed into any Node.js 18+ or Bun 1.1+ app with a single import. This skill teaches how to **use** the SDK (run an agent, stream events, persist sessions) and how to **build with** it (custom tools, permission callbacks, MCP servers, skills, subagents).
 
 It is ESM-only. The core engine makes **zero I/O assumptions** — no console output, no terminal escapes inside the engine. The embedding app owns all I/O by consuming the event stream.
 
-**Scope:** This skill handles building/using agents with `@privos_ai/privos-agent-sdk` (the Skawld harness). It does **NOT** cover the Anthropic Claude API directly (use `claude-api`), the Claude Agent SDK from Anthropic (different package), generic MCP-server authoring (use `mcp-builder`), or non-skawld agent frameworks.
+**Scope:** This skill handles building/using agents with `@privos_ai/privos-agent-sdk` (the PrivOS Agent SDK harness). It does **NOT** cover the Anthropic Claude API directly (use `claude-api`), the Claude Agent SDK from Anthropic (different package), generic MCP-server authoring (use `mcp-builder`), or other agent frameworks.
 
 ## When to use
 
@@ -34,34 +34,12 @@ Import only from these four public subpaths (controlled via the `exports` map):
 | `@privos_ai/privos-agent-sdk/sessions` | `SqliteSessionStore`, `InMemorySessionStore`, `SessionStore` + task persistence types |
 | `@privos_ai/privos-agent-sdk/permissions` | `PermissionEngine`, `CanUseTool` callback types, permission rule types |
 
-## Official documentation
+## Documentation
 
-The canonical, always-current docs live at **https://skawld.com/docs**. The nav has three groups (mirrored here exactly). Link the user to the page that matches their question; each maps to a section in this skill's references, which carry the same `📖 Docs:` page links.
-
-**Getting started**
-- Introduction — https://skawld.com/docs
-- Install — https://skawld.com/docs/install
-- Quickstart — https://skawld.com/docs/quickstart
-
-**Concepts**
-- Overview (the five objects + the loop) — https://skawld.com/docs/concepts
-- Agent *(class)* — https://skawld.com/docs/agent
-- Sessions — https://skawld.com/docs/sessions
-- Events — https://skawld.com/docs/events
-- Providers — https://skawld.com/docs/providers
-- Tools — https://skawld.com/docs/tools
-- MCP — https://skawld.com/docs/mcp
-- Permissions — https://skawld.com/docs/permissions
-- Skills — https://skawld.com/docs/skills
-- Subagents — https://skawld.com/docs/subagents
-- Compaction — https://skawld.com/docs/compaction
-
-**Reference**
-- Errors — https://skawld.com/docs/errors
-- Configuration (tuning `AgentOptions`) — https://skawld.com/docs/configuration
-- Public API — https://skawld.com/docs/api-surface
-
-Page order: Introduction → Install → Quickstart → Overview → Agent → Sessions → Events → Providers → Tools → MCP → Permissions → Skills → Subagents → Compaction → Errors → Configuration → Public API.
+This skill's `references/` are the documentation for the SDK. The repository README
+(https://github.com/PrivOS-AI/privos-agent-sdk#readme) covers install and the public subpaths, and `CHANGELOG.md`
+records every behaviour change. The upstream project's docs site describes the pre-0.5.0 identifiers; do not send
+users there.
 
 ## Quick start
 
@@ -120,8 +98,8 @@ Install with `bun add @privos_ai/privos-agent-sdk` (Bun recommended; npm/pnpm/ya
 | Persist & resume sessions; custom `SessionStore` | `references/building-agents.md` → Sessions; `api-reference.md` → SessionStore |
 | Write a custom `Tool` | `references/building-agents.md` → Custom tools |
 | Connect MCP servers (stdio + HTTP) | `references/building-agents.md` → MCP |
-| Add skills (`.skawld/skills/<name>/SKILL.md`) | `references/building-agents.md` → Skills |
-| Add subagents (`.skawld/agents/<name>.md`) | `references/building-agents.md` → Subagents |
+| Add skills (`.privos-agent-sdk/skills/<name>/SKILL.md`) | `references/building-agents.md` → Skills |
+| Add subagents (`.privos-agent-sdk/agents/<name>.md`) | `references/building-agents.md` → Subagents |
 | Custom provider (extend `BaseProvider`) or custom compaction | `references/building-agents.md` → Custom providers / compaction |
 | Errors, retries, compaction, aborting a run | `references/api-reference.md` → Errors & lifecycle |
 | Copy-paste patterns + test an agent app offline | `references/recipes.md` |
@@ -146,4 +124,4 @@ Install with `bun add @privos_ai/privos-agent-sdk` (Bun recommended; npm/pnpm/ya
 - `references/recipes.md` — copy-paste patterns: streaming UI, permission callback, rules, resume, abort, steer/interrupt, hooks + AskUser, images/thinking, MCP, REPL, offline testing.
 - `assets/starter-app/` — a complete runnable terminal-agent scaffold (package.json + tsconfig + src) to copy and adapt.
 
-When a detail is not covered here, the authoritative sources are the published docs at **https://skawld.com/docs** (see the per-concept link table above), the SDK's own `spec_docs/` (numbered `00-` through `12-`), and `src/sdk.ts` (the curated public export surface). Note: the config-file *loader* (`src/config/`) is a stub in v1 — configure agents in code via `AgentOptions` (the docs' Configuration page covers those knobs).
+When a detail is not covered here, the authoritative sources are the SDK's own `spec_docs/` (numbered `00-` through `12-`), and `src/sdk.ts` (the curated public export surface). Note: the config-file *loader* (`src/config/`) is a stub in v1 — configure agents in code via `AgentOptions` (`references/building-agents.md` covers those knobs).

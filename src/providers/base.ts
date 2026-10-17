@@ -29,7 +29,7 @@ export interface ProviderRequest {
   model: ModelId;
   /** Already-assembled system prompt blocks (see 06-system-prompt). */
   system: SystemBlock[];
-  /** Tool definitions in skawld's normalized shape. */
+  /** Tool definitions in the SDK's normalized shape. */
   tools: ToolSchema[];
   /** Full conversation so far. */
   messages: Message[];

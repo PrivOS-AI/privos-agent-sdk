@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "skawld",
+      "name": "@privos_ai/privos-agent-sdk",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.40.0",
         "@modelcontextprotocol/sdk": "^1.29.0",

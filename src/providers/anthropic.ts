@@ -1,6 +1,6 @@
 /**
  * AnthropicProvider — uses @anthropic-ai/sdk. Translation is mostly a pass-through
- * since skawld's normalized shapes mirror Anthropic's wire format.
+ * since the SDK's normalized shapes mirror Anthropic's wire format.
  *
  * Cache strategy: at most 2 cache_control breakpoints per request, well under
  * Anthropic's 4-breakpoint cap:
@@ -22,7 +22,7 @@ import {
   ContextLengthError,
   ProviderError,
   RateLimitError,
-  SkawldError,
+  PrivOSAgentError,
 } from "../core/errors.js";
 import type {
   ContentBlock,
@@ -345,8 +345,8 @@ export function mapStopReason(wire: string | null | undefined): StopReason {
   }
 }
 
-export function mapAnthropicError(err: unknown): SkawldError {
-  if (err instanceof SkawldError) return err;
+export function mapAnthropicError(err: unknown): PrivOSAgentError {
+  if (err instanceof PrivOSAgentError) return err;
   if (err instanceof Error && err.name === "AbortError") {
     return new AbortError(err.message, { cause: err });
   }

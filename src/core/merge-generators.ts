@@ -77,11 +77,11 @@ export async function* mergeAsyncGenerators<T>(
 
 /**
  * Resolve the default tool-call concurrency cap at Agent construction time.
- * Reads `SKAWLD_MAX_TOOL_CONCURRENCY` (base-10 int); falls back to 10 on
+ * Reads `PRIVOS_AGENT_MAX_TOOL_CONCURRENCY` (base-10 int); falls back to 10 on
  * absent, non-numeric, or <= 0 values. Matches Claude Code's default of 10.
  */
 export function getDefaultToolConcurrency(): number {
-  const raw = process.env.SKAWLD_MAX_TOOL_CONCURRENCY;
+  const raw = process.env.PRIVOS_AGENT_MAX_TOOL_CONCURRENCY;
   if (raw === undefined) return 10;
   const n = parseInt(raw, 10);
   return Number.isFinite(n) && n > 0 ? n : 10;

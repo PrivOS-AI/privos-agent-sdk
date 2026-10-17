@@ -1,7 +1,7 @@
 {
   "name": "@privos_ai/privos-agent-sdk",
-  "version": "0.4.1",
-  "description": "PrivOS-maintained fork of skawld-sdk: TypeScript agent SDK with multi-root configDir and tolerant SSE streaming.",
+  "version": "0.5.0",
+  "description": "PrivOS Agent SDK: TypeScript agent harness with tools, sessions, permissions, MCP, skills and subagents.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/PrivOS-AI/privos-agent-sdk#readme",
@@ -65,8 +65,9 @@
     "build": "bun run clean && bun run gen:version && bun run build:js && bun run build:types",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "test:dist": "bun run build && SKAWLD_DIST_TEST=1 bun test tests/sdk/dist-smoke.test.ts tests/sdk/nodenext-consumer.test.ts",
+    "test:dist": "bun run build && PRIVOS_AGENT_DIST_TEST=1 bun test tests/sdk/dist-smoke.test.ts tests/sdk/nodenext-consumer.test.ts",
     "typecheck": "tsc --noEmit",
+    "check:no-upstream-names": "bash scripts/check-no-upstream-names.sh",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run build && bun test"
   },

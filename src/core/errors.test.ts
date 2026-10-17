@@ -7,14 +7,14 @@ import {
   PermissionDeniedError,
   ProviderError,
   RateLimitError,
-  SkawldError,
+  PrivOSAgentError,
   ToolExecutionError,
 } from "./errors.js";
 
-describe("SkawldError hierarchy", () => {
+describe("PrivOSAgentError hierarchy", () => {
   it("AuthError sets name and kind, not retryable", () => {
     const e = new AuthError("nope");
-    expect(e).toBeInstanceOf(SkawldError);
+    expect(e).toBeInstanceOf(PrivOSAgentError);
     expect(e.name).toBe("AuthError");
     expect(e.kind).toBe("auth");
     expect(e.retryable).toBe(false);

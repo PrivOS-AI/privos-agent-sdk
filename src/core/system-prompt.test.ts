@@ -12,7 +12,7 @@ const BASE_INP: SystemPromptInputs = {
   os: { platform: "linux", release: "5.15.0", arch: "x64" },
   shell: "/bin/bash",
   nodeVersion: "v20.10.0",
-  skawldVersion: "0.1.0",
+  sdkVersion: "0.1.0",
   toolNames: ["Read", "Write", "Edit", "Bash"],
   permissionMode: "default",
 };
@@ -24,7 +24,7 @@ describe("BLOCK_A_IDENTITY", () => {
   });
 
   it("contains key identity phrase", () => {
-    expect(BLOCK_A_IDENTITY).toContain("You are skawld");
+    expect(BLOCK_A_IDENTITY).toContain("You are PrivOS Agent");
   });
 });
 
@@ -78,7 +78,7 @@ describe("buildSystemBlocks", () => {
     const blocks = buildSystemBlocks(BASE_INP);
     const env = blocks[2].text;
     // Check fields appear in the correct order
-    const versionIdx = env.indexOf("skawld version: 0.1.0");
+    const versionIdx = env.indexOf("PrivOS Agent SDK version: 0.1.0");
     const nodeIdx = env.indexOf("Node: v20.10.0");
     const osIdx = env.indexOf("OS: linux 5.15.0 (x64)");
     const shellIdx = env.indexOf("Shell: /bin/bash");

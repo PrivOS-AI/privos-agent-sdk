@@ -73,7 +73,7 @@ describe("findQualifiedNameProblems", () => {
 });
 
 describe("stdioChildEnv", () => {
-  const SECRET = "SKAWLD_TEST_FAKE_SECRET";
+  const SECRET = "PRIVOS_AGENT_TEST_FAKE_SECRET";
 
   beforeEach(() => {
     process.env[SECRET] = "hunter2";

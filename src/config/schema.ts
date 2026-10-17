@@ -6,7 +6,7 @@ import { ConfigError } from "../core/errors.js";
 
 export type ProviderId = "anthropic" | "openai-chat" | "openai-responses";
 
-export interface SkawldConfig {
+export interface PrivOSAgentConfig {
   /** Provider id and per-provider options. */
   provider?: {
     id: ProviderId;
@@ -72,18 +72,18 @@ export interface ValidateContext {
 type Fail = (pointer: string, message: string) => never;
 
 /**
- * Validate raw parsed JSON against SkawldConfig. Unknown top-level keys become
+ * Validate raw parsed JSON against PrivOSAgentConfig. Unknown top-level keys become
  * warnings; unknown nested keys, type errors, and bad enums throw ConfigError
  * carrying the offending JSON Pointer.
  */
-export function validateConfig(raw: unknown, ctx: ValidateContext): SkawldConfig {
+export function validateConfig(raw: unknown, ctx: ValidateContext): PrivOSAgentConfig {
   const fail: Fail = (pointer, message) => {
     const loc = ctx.file ? ` in ${ctx.file}` : "";
     throw new ConfigError(`Invalid config${loc} (${pointer || "/"}): ${message}`);
   };
   if (!isObject(raw)) fail("", "config root must be a JSON object");
   const obj = raw as Record<string, unknown>;
-  const out: SkawldConfig = {};
+  const out: PrivOSAgentConfig = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (value === undefined) continue;
@@ -105,23 +105,23 @@ export function validateConfig(raw: unknown, ctx: ValidateContext): SkawldConfig
   return out;
 }
 
-function validateProvider(value: unknown, fail: Fail): SkawldConfig["provider"] {
+function validateProvider(value: unknown, fail: Fail): PrivOSAgentConfig["provider"] {
   const o = asObject(value, "/provider", fail);
   rejectUnknown(o, ["id", "apiKey", "baseURL", "options"], "/provider", fail);
   if (typeof o.id !== "string" || !PROVIDER_IDS.includes(o.id as ProviderId)) {
     fail("/provider/id", `must be one of ${PROVIDER_IDS.join(", ")}`);
   }
-  const provider: NonNullable<SkawldConfig["provider"]> = { id: o.id as ProviderId };
+  const provider: NonNullable<PrivOSAgentConfig["provider"]> = { id: o.id as ProviderId };
   if (o.apiKey !== undefined) provider.apiKey = asString(o.apiKey, "/provider/apiKey", fail);
   if (o.baseURL !== undefined) provider.baseURL = asString(o.baseURL, "/provider/baseURL", fail);
   if (o.options !== undefined) provider.options = asObject(o.options, "/provider/options", fail);
   return provider;
 }
 
-function validatePermissions(value: unknown, fail: Fail): SkawldConfig["permissions"] {
+function validatePermissions(value: unknown, fail: Fail): PrivOSAgentConfig["permissions"] {
   const o = asObject(value, "/permissions", fail);
   rejectUnknown(o, ["mode", "rules"], "/permissions", fail);
-  const out: NonNullable<SkawldConfig["permissions"]> = {};
+  const out: NonNullable<PrivOSAgentConfig["permissions"]> = {};
   if (o.mode !== undefined) {
     if (typeof o.mode !== "string" || !PERMISSION_MODES.includes(o.mode as PermissionMode)) {
       fail("/permissions/mode", `must be one of ${PERMISSION_MODES.join(", ")}`);
@@ -181,21 +181,21 @@ function validateBashPattern(value: unknown, base: string, fail: Fail): string |
   return fail(`${base}/pattern`, `must be a string or { regex: string }`);
 }
 
-function validateLimits(value: unknown, fail: Fail): SkawldConfig["limits"] {
+function validateLimits(value: unknown, fail: Fail): PrivOSAgentConfig["limits"] {
   const o = asObject(value, "/limits", fail);
   rejectUnknown(o, ["maxTurns", "maxOutputTokens", "maxRetries"], "/limits", fail);
-  const out: NonNullable<SkawldConfig["limits"]> = {};
+  const out: NonNullable<PrivOSAgentConfig["limits"]> = {};
   if (o.maxTurns !== undefined) out.maxTurns = asBoundedInt(o.maxTurns, 1, "/limits/maxTurns", fail);
   if (o.maxOutputTokens !== undefined) out.maxOutputTokens = asBoundedInt(o.maxOutputTokens, 1, "/limits/maxOutputTokens", fail);
   if (o.maxRetries !== undefined) out.maxRetries = asBoundedInt(o.maxRetries, 0, "/limits/maxRetries", fail);
   return out;
 }
 
-function validateSessionStore(value: unknown, fail: Fail): SkawldConfig["sessionStore"] {
+function validateSessionStore(value: unknown, fail: Fail): PrivOSAgentConfig["sessionStore"] {
   const o = asObject(value, "/sessionStore", fail);
   if (o.kind === "sqlite") {
     rejectUnknown(o, ["kind", "databasePath"], "/sessionStore", fail);
-    const store: SkawldConfig["sessionStore"] = { kind: "sqlite" };
+    const store: PrivOSAgentConfig["sessionStore"] = { kind: "sqlite" };
     if (o.databasePath !== undefined) store.databasePath = asString(o.databasePath, "/sessionStore/databasePath", fail);
     return store;
   }

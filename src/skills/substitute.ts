@@ -14,7 +14,7 @@ export interface SubstituteOptions {
 // replacement's output is never re-scanned. Reserved alternatives precede the
 // generic `$name` so e.g. `$ARGUMENTS` is consumed whole, not as `$ARGUMENT`+`S`.
 const SUBST_RE =
-  /\$\{SKAWLD_SKILL_DIR\}|\$\{SKAWLD_SESSION_ID\}|\$ARGUMENTS|\$([A-Za-z_][A-Za-z0-9_]*)/g;
+  /\$\{PRIVOS_SKILL_DIR\}|\$\{PRIVOS_SESSION_ID\}|\$ARGUMENTS|\$([A-Za-z_][A-Za-z0-9_]*)/g;
 
 export function substituteSkillBody(opts: SubstituteOptions): string {
   const { skill, args, sessionId } = opts;
@@ -26,8 +26,8 @@ export function substituteSkillBody(opts: SubstituteOptions): string {
   }
 
   const body = skill.body.replace(SUBST_RE, (m, slot: string | undefined) => {
-    if (m === "${SKAWLD_SKILL_DIR}") return skill.dir;
-    if (m === "${SKAWLD_SESSION_ID}") return sessionId;
+    if (m === "${PRIVOS_SKILL_DIR}") return skill.dir;
+    if (m === "${PRIVOS_SESSION_ID}") return sessionId;
     if (m === "$ARGUMENTS") return args;
     // Declared slot → its value; any other $name passes through verbatim.
     const value = slot !== undefined ? slots.get(slot) : undefined;

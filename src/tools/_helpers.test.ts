@@ -49,7 +49,7 @@ describe("findExecutable", () => {
   });
 
   test("returns null for nonexistent executable", () => {
-    expect(findExecutable("__definitely_not_a_real_binary_skawld__")).toBeNull();
+    expect(findExecutable("__definitely_not_a_real_binary_privos_agent__")).toBeNull();
   });
 
   test("caches result (same reference on second call)", () => {
@@ -128,7 +128,7 @@ describe("atomicWriteFile", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-test-"));
   });
 
   afterEach(() => {
@@ -164,8 +164,8 @@ describe("atomicWriteFile", () => {
     const target = path.join(tmpDir, "clean.txt");
     await atomicWriteFile(target, "data");
     const entries = fs.readdirSync(tmpDir);
-    // Only the target file should exist; no .tmp-skawld-* files
-    const tmpFiles = entries.filter(e => e.startsWith(".tmp-skawld-"));
+    // Only the target file should exist; no .tmp-privos-agent-* files
+    const tmpFiles = entries.filter(e => e.startsWith(".tmp-privos-agent-"));
     expect(tmpFiles).toHaveLength(0);
   });
 
@@ -189,7 +189,7 @@ describe("atomicWriteFile", () => {
     }
 
     const entries = fs.readdirSync(roDir);
-    const tmpFiles = entries.filter((e: string) => e.startsWith(".tmp-skawld-"));
+    const tmpFiles = entries.filter((e: string) => e.startsWith(".tmp-privos-agent-"));
     expect(tmpFiles).toHaveLength(0);
   });
 });
@@ -202,7 +202,7 @@ describe("runRipgrep", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-rg-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-rg-test-"));
     fs.writeFileSync(path.join(tmpDir, "a.txt"), "hello world\nfoo bar\n");
     fs.writeFileSync(path.join(tmpDir, "b.txt"), "another line\n");
   });

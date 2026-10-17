@@ -7,7 +7,7 @@ import { rmSync, existsSync } from "node:fs";
 import { SqliteSessionStore } from "./sqlite.js";
 
 function makeTmpStore(): { store: SqliteSessionStore; dir: string } {
-  const dir = join(tmpdir(), `skawld-sqlite-test-${crypto.randomUUID()}`);
+  const dir = join(tmpdir(), `privos-agent-sqlite-test-${crypto.randomUUID()}`);
   const store = new SqliteSessionStore({ databasePath: join(dir, "sessions.db"), cwd: dir });
   return { store, dir };
 }

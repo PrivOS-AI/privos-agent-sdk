@@ -7,7 +7,7 @@
  * exist and are usable together — not to re-test engine internals (those have
  * dedicated module tests).
  *
- * A bunfig `skawld → src` alias is deliberately NOT used: it would also shadow
+ * A bunfig `@privos_ai/privos-agent-sdk → src` alias is deliberately NOT used: it would also shadow
  * the package self-reference in dist-smoke.test.ts and silently defeat that
  * test. Relative imports give the same coverage with no aliasing footgun.
  */
@@ -16,8 +16,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { Agent, defaultTools, SkawldError, AuthError, HookError, isHookErrorEvent, loadConfig } from "../../src/sdk.js";
-import type { LoadedConfig, SkawldConfig, ConfigWarning, Hooks, PreToolUseHook, StopHook, HookErrorEvent } from "../../src/sdk.js";
+import { Agent, defaultTools, PrivOSAgentError, AuthError, HookError, isHookErrorEvent, loadConfig } from "../../src/sdk.js";
+import type { LoadedConfig, PrivOSAgentConfig, ConfigWarning, Hooks, PreToolUseHook, StopHook, HookErrorEvent } from "../../src/sdk.js";
 import { InMemorySessionStore } from "../../src/sessions/index.js";
 import { ToolRegistry } from "../../src/tools/index.js";
 import type { CanUseTool } from "../../src/permissions/index.js";
@@ -161,9 +161,9 @@ describe("SDK surface — fast source layer", () => {
     await agent.close();
   });
 
-  test("errors: typed error classes extend SkawldError", () => {
-    expect(new AuthError("x")).toBeInstanceOf(SkawldError);
-    expect(new HookError("x")).toBeInstanceOf(SkawldError);
+  test("errors: typed error classes extend PrivOSAgentError", () => {
+    expect(new AuthError("x")).toBeInstanceOf(PrivOSAgentError);
+    expect(new HookError("x")).toBeInstanceOf(PrivOSAgentError);
   });
 
   test("hooks: AgentOptions.hooks public types + a Stop block continues the loop", async () => {
@@ -198,12 +198,12 @@ describe("SDK surface — fast source layer", () => {
   });
 
   test("config: loadConfig from main entry merges a project file", async () => {
-    const root = mkdtempSync(path.join(tmpdir(), "skawld-surface-cfg-"));
+    const root = mkdtempSync(path.join(tmpdir(), "privos-agent-surface-cfg-"));
     try {
-      const skawldDir = path.join(root, ".skawld");
-      mkdirSync(skawldDir, { recursive: true });
-      const cfg: SkawldConfig = { model: "claude-sonnet-4-6", provider: { id: "anthropic" } };
-      writeFileSync(path.join(skawldDir, "config.json"), JSON.stringify(cfg));
+      const sdkConfigDir = path.join(root, ".privos-agent-sdk");
+      mkdirSync(sdkConfigDir, { recursive: true });
+      const cfg: PrivOSAgentConfig = { model: "claude-sonnet-4-6", provider: { id: "anthropic" } };
+      writeFileSync(path.join(sdkConfigDir, "config.json"), JSON.stringify(cfg));
 
       const loaded: LoadedConfig = await loadConfig({ cwd: root, env: { HOME: root } });
       expect(loaded.config.model).toBe("claude-sonnet-4-6");

@@ -1,8 +1,8 @@
 /**
- * Simple interactive skawld CLI for manual testing.
+ * Simple interactive PrivOS Agent SDK CLI for manual testing.
  *
  * Requires: OPENAI_API_KEY in environment.
- * Optional: SKAWLD_MODEL (default: gpt-5), SKAWLD_CONFIG_DIR (default: ./.skawld).
+ * Optional: PRIVOS_AGENT_MODEL (default: gpt-5), PRIVOS_AGENT_CONFIG_DIR (default: ./.privos-agent-sdk).
  *
  * Run with: bun run examples/interactive-cli.ts
  *
@@ -26,10 +26,10 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const MODEL = process.env.SKAWLD_MODEL ?? "gpt-5";
-const CONFIG_DIR = process.env.SKAWLD_CONFIG_DIR
-  ? resolve(process.env.SKAWLD_CONFIG_DIR)
-  : resolve(process.cwd(), ".skawld");
+const MODEL = process.env.PRIVOS_AGENT_MODEL ?? "gpt-5";
+const CONFIG_DIR = process.env.PRIVOS_AGENT_CONFIG_DIR
+  ? resolve(process.env.PRIVOS_AGENT_CONFIG_DIR)
+  : resolve(process.cwd(), ".privos-agent-sdk");
 
 // ANSI colors
 const c = {
@@ -398,7 +398,7 @@ function printParent(event: any): void {
 
 // --- Main loop ---------------------------------------------------------------
 
-console.log(`${c.bold}skawld${c.reset} ${c.dim}— ${MODEL} · yolo · ${workingDir}${c.reset}`);
+console.log(`${c.bold}privos-agent${c.reset} ${c.dim}— ${MODEL} · yolo · ${workingDir}${c.reset}`);
 console.log(`${c.dim}Type a message. /exit to quit.${c.reset}`);
 
 let shuttingDown = false;

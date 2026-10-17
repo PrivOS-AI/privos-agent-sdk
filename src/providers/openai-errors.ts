@@ -8,12 +8,12 @@ import {
   ContextLengthError,
   ProviderError,
   RateLimitError,
-  SkawldError,
+  PrivOSAgentError,
 } from "../core/errors.js";
 import { readErrorCode, readRetryAfter, readStatus } from "./http-error-fields.js";
 
-export function mapOpenAIError(err: unknown): SkawldError {
-  if (err instanceof SkawldError) return err;
+export function mapOpenAIError(err: unknown): PrivOSAgentError {
+  if (err instanceof PrivOSAgentError) return err;
   if (err instanceof Error && err.name === "AbortError") {
     return new AbortError(err.message, { cause: err });
   }

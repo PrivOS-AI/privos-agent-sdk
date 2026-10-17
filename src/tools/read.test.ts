@@ -22,7 +22,7 @@ function makeCtx(cwd: string): ToolContext {
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "skawld-read-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "privos-agent-read-test-"));
 });
 
 afterEach(() => {

@@ -1,14 +1,14 @@
-# Skawld Starter App
+# PrivOS Agent SDK Starter App
 
 A minimal but complete terminal agent built on `@privos_ai/privos-agent-sdk`. Copy this folder, then adapt `src/index.ts`.
 
-Docs: https://skawld.com/docs (quickstart: https://skawld.com/docs/quickstart)
+Docs: the `privos-agent-sdk-dev` skill's `references/` (start with `project-setup.md`).
 
 ## What it shows
 
 - Provider + model + `defaultTools()` wiring
 - A `canUseTool` permission prompt for write/exec tools (reads run freely)
-- A persistent multi-turn session (SQLite at `.skawld/sessions.db`)
+- A persistent multi-turn session (SQLite at `.privos-agent-sdk/sessions.db`)
 - Streaming assistant text + live tool-call display
 - Graceful shutdown (`agent.close()` on `/exit` and Ctrl+C)
 
@@ -20,7 +20,7 @@ bun install      # or npm install
 bun run start    # or: bun run src/index.ts
 ```
 
-Type messages; `/exit` or Ctrl+C to quit. Sessions persist under `.skawld/` — add it to `.gitignore`.
+Type messages; `/exit` or Ctrl+C to quit. Sessions persist under `.privos-agent-sdk/` — add it to `.gitignore`.
 
 ## Adapt it
 

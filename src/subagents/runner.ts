@@ -8,7 +8,7 @@ import os from "node:os";
 import { getAgentInternals } from "../core/agent.js";
 import { Session, getSessionInternals } from "../core/session.js";
 import { buildSystemBlocks } from "../core/system-prompt.js";
-import { SKAWLD_VERSION } from "../core/version.js";
+import { PRIVOS_AGENT_SDK_VERSION } from "../core/version.js";
 import { ToolRegistry } from "../tools/registry.js";
 import type { Event } from "../core/events.js";
 import type { SessionInternal } from "../core/session.js";
@@ -105,7 +105,7 @@ export async function runSubagent(args: RunSubagentArgs): Promise<RunSubagentRes
     os: { platform: process.platform, release: os.release(), arch: process.arch },
     shell: process.env.SHELL ?? "unknown",
     nodeVersion: process.version,
-    skawldVersion: SKAWLD_VERSION,
+    sdkVersion: PRIVOS_AGENT_SDK_VERSION,
     toolNames: childTools.list().map((t) => t.name).sort(),
     permissionMode: agent.opts.permissions?.mode ?? "default",
   });

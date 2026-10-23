@@ -144,6 +144,13 @@ const ENV_NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
 // eslint-disable-next-line no-control-regex
 const CONTROL_CHARS_RE = /[\u0000-\u001f\u007f]/;
 
+/** camelCase spellings (as in the host's mcp__privos__askUser) mapped onto this tool's snake_case fields. */
+const CAMEL_CREDENTIAL_FIELDS = [
+  ["pathPrefix", "path_prefix"],
+  ["envName", "env_name"],
+  ["baseUrlEnvName", "base_url_env_name"],
+] as const;
+
 export class AskUserTool implements Tool<AskUserInput> {
   readonly name = "AskUser";
   readonly description = DESCRIPTION;
@@ -241,7 +248,13 @@ export class AskUserTool implements Tool<AskUserInput> {
     };
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return fail(" must be an object");
     if (questionCount !== 1) return fail(" requires it to be the only question");
-    const c = raw as Record<string, unknown>;
+    const c = { ...(raw as Record<string, unknown>) };
+    // The host's askUser tool takes camelCase names; accept them here rather than dropping them.
+    for (const [camel, snake] of CAMEL_CREDENTIAL_FIELDS) {
+      if (c[camel] === undefined) continue;
+      if (c[snake] !== undefined && c[snake] !== c[camel]) return fail(`.${camel} and .${snake} disagree`);
+      c[snake] = c[camel];
+    }
 
     if (typeof c.host !== "string" || !HOST_RE.test(c.host)) {
       return fail(".host must be lowercase letters, digits, dots and hyphens (optional leading '*.')");

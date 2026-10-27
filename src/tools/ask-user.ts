@@ -71,6 +71,14 @@ export type AskUserResponse =
   | { answers: AskUserAnswer[] }
   | { declined: true; reason?: string };
 
+/** A `credential` object whose every value is empty: no host, no purpose, nothing else set. */
+export function isBlankCredential(raw: unknown): boolean {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return false;
+  return Object.values(raw as Record<string, unknown>).every(
+    (v) => v == null || v === false || (typeof v === "string" && v.trim() === ""),
+  );
+}
+
 export type AskUserHandler = (
   req: AskUserRequest,
   signal: AbortSignal,
@@ -165,7 +173,12 @@ export class AskUserTool implements Tool<AskUserInput> {
       }
       const qObj = q as Record<string, unknown>;
 
-      const credential = qObj.credential == null ? undefined : this.validateCredential(qObj.credential, qi, questions.length);
+      // A model that fills every schema field (GPT on OpenRouter does) sends `credential` with every value
+      // blank on an ordinary question. That is no credential request, so treat it like `credential: null`;
+      // reading it as one rejected every multi-question call and the model retried the same call in a loop.
+      const credential = qObj.credential == null || isBlankCredential(qObj.credential)
+        ? undefined
+        : this.validateCredential(qObj.credential, qi, questions.length);
       // The host never shows a credential question's own text to the user, so a model that leaves it out
       // should not fail the call and retry; fill in neutral text instead.
       if (credential) {

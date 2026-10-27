@@ -549,6 +549,24 @@ describe("AskUserTool credential questions", () => {
     expect(input.questions[0]!.credential).toBeUndefined();
   });
 
+  test("a blank credential object (every field empty, as GPT fills it) is treated as no credential", () => {
+    const blank = { host: "", path_prefix: "", purpose: "", env_name: "", base_url_env_name: "", rotate: false };
+    const input = tool.validate({
+      questions: [
+        { ...SINGLE_Q, credential: blank },
+        { ...SINGLE_Q, question: "Second?", header: "Second", credential: { ...blank } },
+      ],
+    });
+    expect(input.questions).toHaveLength(2);
+    expect(input.questions[0]!.credential).toBeUndefined();
+    expect(input.questions[1]!.credential).toBeUndefined();
+    expect(input.questions[0]!.options.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("a credential with only some fields set is still validated, not dropped", () => {
+    invalid({ questions: [{ ...SINGLE_Q, credential: { host: "", purpose: "Call the API" } }] }, /credential\.host/);
+  });
+
   test("a plain question still needs 2-4 options", () => {
     invalid({ questions: [{ question: "Q?", header: "H" }] }, /options must be an array of 2–4 entries/);
   });

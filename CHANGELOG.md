@@ -2,6 +2,16 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.1] — 2026-10-27
+
+### Fixed
+
+- `AskUser` treats a `credential` object whose every field is empty as no credential. Models that fill
+  every schema field (GPT through OpenRouter) send `credential: { host: "", purpose: "", … }` on ordinary
+  questions. 0.4.0–0.5.0 read that as a credential request and rejected any call with more than one
+  question, so the model repeated the same call until its turn ran out. A credential with only some
+  fields set is still validated as before.
+
 ## [0.5.0] — 2026-10-17
 
 Every runtime identifier inherited from upstream skawld-sdk now carries the PrivOS name.

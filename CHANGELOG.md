@@ -2,6 +2,21 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.2] — 2026-10-29
+
+### Fixed
+
+- Every streamed LLM call stayed in memory until the process exited. The vendor SDKs (`MessageStream`,
+  `fetchWithTimeout`) add abort listeners to the request signal and never remove them, and on Node the run's
+  `AbortSignal.any` signal is pinned while it has abort listeners. Each call's request body (system prompt plus
+  history, 0.5–2 MB) therefore stayed reachable. Long-running hosts grew by about 250 MB/h until the V8 heap limit
+  killed them. The Anthropic, OpenAI Chat and OpenAI Responses providers now give the vendor SDK a per-call child
+  signal and unlink it when the call ends. Measured on Node, 200 calls with 1 MB bodies retained 200 MB before the
+  fix and 0.2 MB after.
+- `AskUser` accepts the camelCase credential fields the host askUser tool sends (`pathPrefix`, `envName`,
+  `baseUrlEnvName`). They were dropped silently before, so a credential question lost its env names. A camelCase and
+  snake_case pair that disagree is refused.
+
 ## [0.5.1] — 2026-10-27
 
 ### Fixed

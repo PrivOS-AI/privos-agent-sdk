@@ -16,6 +16,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { childSignal } from "../core/abort.js";
 import {
   AbortError,
   AuthError,
@@ -463,10 +464,12 @@ export class AnthropicProvider extends BaseProvider {
     payload: AnthropicRequestPayload,
     req: ProviderRequest,
   ): AsyncIterable<ProviderStreamEvent> {
+    const call = childSignal(req.signal);
     let wire: WireStream | undefined;
     try {
-      wire = this.openStream(payload, req.signal, 0);
+      wire = this.openStream(payload, call.signal, 0);
     } catch (err) {
+      call.dispose();
       throw mapAnthropicError(err);
     }
 
@@ -480,6 +483,7 @@ export class AnthropicProvider extends BaseProvider {
       throw mapAnthropicError(err);
     } finally {
       wire.controller?.abort?.();
+      call.dispose();
     }
   }
 }

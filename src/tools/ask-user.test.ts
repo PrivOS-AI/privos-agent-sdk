@@ -506,6 +506,20 @@ describe("AskUserTool credential questions", () => {
     expect(input.questions[0]!.credential).toEqual({ ...cred });
   });
 
+  test("maps camelCase pathPrefix, envName and baseUrlEnvName instead of dropping them", () => {
+    const input = tool.validate({
+      questions: [credQ({}, { pathPrefix: "/v1", envName: "OPENAI_API_KEY", baseUrlEnvName: "OPENAI_BASE_URL" })],
+    });
+    expect(input.questions[0]!.credential).toEqual({
+      ...cred,
+      path_prefix: "/v1",
+      env_name: "OPENAI_API_KEY",
+      base_url_env_name: "OPENAI_BASE_URL",
+    });
+    invalid({ questions: [credQ({}, { envName: "openai_key" })] }, /\.env_name must match/);
+    invalid({ questions: [credQ({}, { envName: "A_KEY", env_name: "B_KEY" })] }, /\.envName and \.env_name disagree/);
+  });
+
   test("must be the only question", () => {
     invalid({ questions: [credQ(), SINGLE_Q] }, /credential requires it to be the only question/);
     invalid({ questions: [credQ(), credQ()] }, /credential requires it to be the only question/);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { getEventListeners } from "node:events";
 import {
   AbortError,
   AuthError,
@@ -759,6 +760,24 @@ describe("AnthropicProvider", () => {
       if (_ev.type === "text_delta") break;
     }
     expect(aborted).toBe(true);
+  });
+
+  it("keeps vendor abort listeners off the request signal", async () => {
+    // The vendor MessageStream adds an abort listener it never removes; on the
+    // run's AbortSignal.any signal that pinned every request body in memory.
+    const run = new AbortController();
+    let vendorSignal: AbortSignal | undefined;
+    class FakeProvider extends AnthropicProvider {
+      override openStream(_payload: AnthropicRequestPayload, signal: AbortSignal) {
+        vendorSignal = signal;
+        signal.addEventListener("abort", () => {});
+        return Object.assign(fromArray(okEvents), { controller: undefined });
+      }
+    }
+    const p = new FakeProvider({ apiKey: "x" });
+    for (let i = 0; i < 3; i++) await collect(p.stream(req({ signal: run.signal })));
+    expect(vendorSignal).not.toBe(run.signal);
+    expect(getEventListeners(run.signal, "abort").length).toBe(0);
   });
 
   // Retry of the initial connection (429/5xx/network) is managed by the SDK so

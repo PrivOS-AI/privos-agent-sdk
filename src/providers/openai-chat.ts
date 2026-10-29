@@ -405,6 +405,8 @@ export async function* mapWireEvents(
 
 interface WireStream extends AsyncIterable<unknown> {
   controller?: { abort?: () => void };
+  /** Settles when the vendor stream ends, fails or is aborted. */
+  done?: () => Promise<void>;
 }
 
 interface OpenAIWireClient {
@@ -454,7 +456,15 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
     maxRetries: number,
   ): WireStream {
     const outgoing = this.sanitizeLoneSurrogates ? sanitizeLoneSurrogates(payload) : payload;
-    return this.client.chat.completions.stream(outgoing, { signal, maxRetries });
+    const call = childSignal(signal);
+    try {
+      const wire = this.client.chat.completions.stream(outgoing, { signal: call.signal, maxRetries });
+      wire.done?.().then(call.dispose, call.dispose);
+      return wire;
+    } catch (err) {
+      call.dispose();
+      throw err;
+    }
   }
 
   async *stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent> {
@@ -476,12 +486,10 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
     payload: ChatRequestPayload,
     req: ProviderRequest,
   ): AsyncIterable<ProviderStreamEvent> {
-    const call = childSignal(req.signal);
     let wire: WireStream | undefined;
     try {
-      wire = this.openStream(payload, call.signal, 0);
+      wire = this.openStream(payload, req.signal, 0);
     } catch (err) {
-      call.dispose();
       throw mapOpenAIError(err);
     }
 
@@ -495,7 +503,6 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
       throw mapOpenAIError(err);
     } finally {
       wire.controller?.abort?.();
-      call.dispose();
     }
   }
 }

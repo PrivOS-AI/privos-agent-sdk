@@ -762,22 +762,53 @@ describe("AnthropicProvider", () => {
     expect(aborted).toBe(true);
   });
 
+  it("passes the request signal itself to an openStream override", async () => {
+    // Hosts key per-request state by this signal (privos-sandbox completion tracking).
+    const run = new AbortController();
+    let seen: AbortSignal | undefined;
+    class FakeProvider extends AnthropicProvider {
+      override openStream(_payload: AnthropicRequestPayload, signal: AbortSignal) {
+        seen = signal;
+        return Object.assign(fromArray(okEvents), { controller: undefined });
+      }
+    }
+    await collect(new FakeProvider({ apiKey: "x" }).stream(req({ signal: run.signal })));
+    expect(seen).toBe(run.signal);
+  });
+
   it("keeps vendor abort listeners off the request signal", async () => {
     // The vendor MessageStream adds an abort listener it never removes; on the
     // run's AbortSignal.any signal that pinned every request body in memory.
     const run = new AbortController();
-    let vendorSignal: AbortSignal | undefined;
-    class FakeProvider extends AnthropicProvider {
-      override openStream(_payload: AnthropicRequestPayload, signal: AbortSignal) {
-        vendorSignal = signal;
-        signal.addEventListener("abort", () => {});
-        return Object.assign(fromArray(okEvents), { controller: undefined });
+    const vendorSignals: AbortSignal[] = [];
+    class FakeClientProvider extends AnthropicProvider {
+      constructor() {
+        super({ apiKey: "x" });
+        this.client = {
+          messages: {
+            stream: (_body: unknown, options?: { signal?: AbortSignal }) => {
+              const signal = options?.signal as AbortSignal;
+              vendorSignals.push(signal);
+              signal.addEventListener("abort", () => {});
+              let settle!: () => void;
+              const done = new Promise<void>((resolve) => (settle = resolve));
+              async function* wire() {
+                yield* okEvents;
+                settle();
+              }
+              return Object.assign(wire(), { controller: undefined, done: () => done });
+            },
+          },
+        } as unknown as typeof this.client;
       }
     }
-    const p = new FakeProvider({ apiKey: "x" });
+    const p = new FakeClientProvider();
     for (let i = 0; i < 3; i++) await collect(p.stream(req({ signal: run.signal })));
-    expect(vendorSignal).not.toBe(run.signal);
+    await Promise.resolve();
+    expect(vendorSignals.every((s) => s !== run.signal)).toBe(true);
     expect(getEventListeners(run.signal, "abort").length).toBe(0);
+    run.abort();
+    expect(vendorSignals.every((s) => !s.aborted)).toBe(true);
   });
 
   // Retry of the initial connection (429/5xx/network) is managed by the SDK so

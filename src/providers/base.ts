@@ -108,6 +108,9 @@ export abstract class BaseProvider {
   /** Maximum context window for the model, in tokens. Used by compaction. */
   abstract contextWindow(model: ModelId): number;
 
+  /** Known provider request default, when the API requires one. Undefined leaves the API default unspecified. */
+  defaultOutputTokens?(model: ModelId): number | undefined;
+
   /** Streaming entry point. The engine always streams. */
   abstract stream(req: ProviderRequest): AsyncIterable<ProviderStreamEvent>;
 }

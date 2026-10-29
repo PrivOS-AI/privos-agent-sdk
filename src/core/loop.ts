@@ -12,7 +12,6 @@ import { wrapInSystemReminder } from "../skills/system-reminder.js";
 import { addUsage } from "./types.js";
 import type {
   Message,
-  ModelId,
   TextBlock,
   ImageBlock,
   ThinkingBlock,
@@ -24,6 +23,7 @@ import type { Session, RunOptions, SessionInternal } from "./session.js";
 import type { Agent, AgentInternal } from "./agent.js";
 import type { ProviderRequest, ProviderStreamEvent } from "../providers/base.js";
 import type { HookContext } from "./hooks.js";
+import { resolveTurnModel, type TurnModel } from "./model-config.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -97,17 +97,14 @@ function buildRequest(
   ai: AgentInternal,
   opts: RunOptions,
   signal: AbortSignal,
-  modelOverride?: ModelId,
+  selected: TurnModel,
 ): ProviderRequest {
-  // max_output_tokens precedence: per-run override > Agent-level default >
-  // undefined (omit from request; provider decides what to do — see base.ts).
-  const effectiveMaxOutput = opts.maxOutputTokens ?? ai.maxOutputTokens;
   const req: ProviderRequest = {
-    model: modelOverride ?? ai.model,
+    model: selected.model,
     system: si.systemBlocksOverride ?? ai.systemBlocks,
     tools: (si.toolsOverride ?? ai.tools).schemas(),
     messages: si.providerView,
-    ...(effectiveMaxOutput !== undefined && { max_output_tokens: effectiveMaxOutput }),
+    ...(selected.maxOutputTokens !== undefined && { max_output_tokens: selected.maxOutputTokens }),
     temperature: opts.temperature,
     cache_prompt: true,
     // SDK-managed provider retry budget. Provider adapters disable SDK
@@ -323,9 +320,9 @@ async function* streamTurnWithContextRetry(
   ai: AgentInternal,
   opts: RunOptions,
   signal: AbortSignal,
-  modelOverride?: ModelId,
+  selected: TurnModel,
 ): AsyncGenerator<PartialAssistantEvent | CompactionEvent | HookErrorEvent, { assistantMessage: Message; stopReason: StopReason; usage: Usage }> {
-  const req = buildRequest(si, ai, opts, signal, modelOverride);
+  const req = buildRequest(si, ai, opts, signal, selected);
   try {
     return yield* streamTurn(ai.provider, req, ai.includePartialMessages);
   } catch (err) {
@@ -333,13 +330,13 @@ async function* streamTurnWithContextRetry(
       si.markCompactionUsed();
       // If the strategy could not reduce the view, re-sending would only
       // reproduce the same ContextLengthError — surface the original instead.
-      const reduced = await runForcedCompaction(si, ai, signal);
+      const reduced = await runForcedCompaction(si, ai, signal, selected);
       yield* drainCompactionHookErrors(si);
       if (!reduced) throw err;
       yield buildCompactionEvent(si);
       reinjectSkillContext(si, ai);
-      // Retry uses the session's default model — the one-turn override is spent.
-      const retryReq = buildRequest(si, ai, opts, signal);
+      // A context retry belongs to the same logical turn, including its model and budget.
+      const retryReq = buildRequest(si, ai, opts, signal, selected);
       return yield* streamTurn(ai.provider, retryReq, ai.includePartialMessages);
     }
     throw err;
@@ -469,14 +466,6 @@ export async function* runLoop(
       // Reset compaction retry flag at the top of every turn
       si.compactionRetryUsedThisTurn = false;
 
-      // Compact when projected token usage exceeds 80% of the context window.
-      const didCompact = await maybeCompact(si, ai, signal);
-      yield* drainCompactionHookErrors(si);
-      if (didCompact) {
-        yield buildCompactionEvent(si);
-        reinjectSkillContext(si, ai);
-      }
-
       // Consume any pending one-turn skill overlay (model override + additive
       // allow set). Cleared in finally below regardless of how the turn ends.
       const overlay = si.pendingSkillOverlay;
@@ -485,9 +474,16 @@ export async function* runLoop(
       si.currentTurnAllowedTools = overlay?.allowedTools;
 
       try {
+        const selected = resolveTurnModel(ai, opts, modelOverride);
+        const didCompact = await maybeCompact(si, ai, signal, selected);
+        yield* drainCompactionHookErrors(si);
+        if (didCompact) {
+          yield buildCompactionEvent(si);
+          reinjectSkillContext(si, ai);
+        }
         // Stream the turn (yields PartialAssistantEvents, returns assembled result)
         const { assistantMessage, stopReason, usage } =
-          yield* streamTurnWithContextRetry(si, ai, opts, signal, modelOverride);
+          yield* streamTurnWithContextRetry(si, ai, opts, signal, selected);
 
         // Persist + emit assistant message
         await si.append([assistantMessage]);

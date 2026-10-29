@@ -145,6 +145,25 @@ const agent = new Agent({
 
 ---
 
+## Model selection and output budgets
+
+`AgentOptions.resolveModel(requestedModel)` can supply a reliable model/route `ModelConfiguration`:
+its exact `model`, optional `contextWindow` and output capability `maxOutputTokens`, and the desired
+`outputTokenBudget`. The SDK resolves one snapshot per assistant turn before compaction and keeps
+it for a context-error retry. A Skill's explicit model name is not rewritten; omission or `inherit`
+keeps the Agent model selection.
+
+Budget precedence is Run option, Agent option, model budget, then known provider default. Capability
+bounds a selected budget; it does not request the model's entire maximum. Anthropic retains its known
+32768 default, while OpenAI with no desired/default budget keeps the wire field absent. Compaction
+uses the selected model at `min(80% of context, context - requested output)`; it does not reserve the
+same output again inside the 20% headroom. Summary requests keep their own smaller budget. A known
+normal or summary budget that cannot fit an explicitly configured context reports a configuration
+error instead of being silently reduced.
+
+See `skills/privos-agent-sdk-dev/references/api-reference.md` for the complete contract, custom
+provider forwarding and the limits of preflight without a local tokenizer or prior usage.
+
 ## License
 
 MIT

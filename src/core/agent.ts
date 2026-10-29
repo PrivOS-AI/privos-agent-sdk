@@ -34,12 +34,15 @@ import type { AgentRegistry } from "../subagents/registry.js";
 import type { SessionInternal } from "./session.js";
 import { AskUserTool } from "../tools/ask-user.js";
 import type { AskUserHandler } from "../tools/ask-user.js";
+import type { ModelConfiguration } from "./model-config.js";
 
 export interface AgentOptions {
   /** LLM provider. Required. */
   provider: BaseProvider;
   /** Model id string. Required (the SDK has no default). */
   model: ModelId;
+  /** Resolve the effective model, capabilities and default budget once per assistant turn, before compaction. */
+  resolveModel?: (requestedModel: ModelId) => ModelConfiguration | undefined;
   /** Tool registry. If omitted, defaults to the built-in tools. */
   tools?: ToolRegistry;
   /**
@@ -76,11 +79,10 @@ export interface AgentOptions {
   /** Max retries for retryable provider errors. Default 5. */
   maxRetries?: number;
   /**
-   * Max output tokens per turn. When omitted, the request does NOT carry an
-   * Agent-level cap: OpenAI providers omit `max_tokens` from the wire (the
-   * model's API default applies); the Anthropic provider falls back to 32768
-   * because its API requires the field. Pass an explicit number to override
-   * both behaviors.
+   * Desired output budget per turn. RunOptions overrides it; otherwise the
+   * resolved model budget or a known provider default applies. Without any of
+   * those, OpenAI leaves the wire field absent (API default); Anthropic has a
+   * known required-field default of 32768. Configured model capability bounds it.
    */
   maxOutputTokens?: number;
   /** Emit partial_assistant events with token deltas. Default false. */
@@ -144,10 +146,9 @@ export interface AgentInternal {
   cwd: string;
   systemBlocks: SystemBlock[];
   maxRetries: number;
-  /** Undefined means "no Agent-level cap" — the request omits the field and the
-   * provider applies its own default (Anthropic falls back to 32768 since its
-   * API requires `max_tokens`; OpenAI omits it from the wire). */
+  /** Optional Agent-level requested budget; resolved together with model settings each turn. */
   maxOutputTokens: number | undefined;
+  resolveModel?: AgentOptions["resolveModel"];
   /** Max number of parallel-safe tool calls in flight at once in the scheduler.
    * Resolved once at Agent construction via getDefaultToolConcurrency() so
    * env-var changes during a process don't race per-turn. */
@@ -335,7 +336,6 @@ export class Agent {
             const skillTool = new SkillTool({
               skills,
               getSessionInternal: (sid) => sessions.get(sid)?.deref(),
-              getSessionModel: () => internal.model,
             });
             tools.register(skillTool);
 
@@ -343,7 +343,7 @@ export class Agent {
             // model override). User-provided rules still take precedence by
             // being earlier in the list — we APPEND.
             for (const s of loaded) {
-              if (!s.frontmatter.allowedTools && !s.frontmatter.model) {
+              if (!s.frontmatter.allowedTools && (!s.frontmatter.model || s.frontmatter.model === "inherit")) {
                 permRules.push({ kind: "tool", tool: "Skill", arg: s.name, decision: "allow" });
               }
             }
@@ -408,6 +408,7 @@ export class Agent {
       systemBlocks,
       maxRetries: opts.maxRetries ?? 5,
       maxOutputTokens: opts.maxOutputTokens,
+      resolveModel: opts.resolveModel,
       toolConcurrency: getDefaultToolConcurrency(),
       includePartialMessages: opts.includePartialMessages ?? false,
       maxTurns: opts.maxTurns ?? Infinity,

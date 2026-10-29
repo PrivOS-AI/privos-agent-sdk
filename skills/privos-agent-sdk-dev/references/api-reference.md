@@ -10,6 +10,7 @@ Passed to `new Agent(opts)`. Only `provider` and `model` are required.
 interface AgentOptions {
   provider: BaseProvider;                 // REQUIRED — an instantiated provider
   model: ModelId;                         // REQUIRED — model id string; no SDK default
+  resolveModel?: (requestedModel: ModelId) => ModelConfiguration | undefined;
   tools?: ToolRegistry;                   // default: defaultTools() (the 10 built-ins)
   mcpServers?: Record<string, McpServerConfig>;  // keyed by server name; tools exposed as mcp__<server>__<tool>
   mcpExtraEnv?: (serverName: string) => Record<string, string>; // extra env for stdio MCP servers; under the server's own env
@@ -33,11 +34,50 @@ interface AgentOptions {
 }
 ```
 
-- **`maxOutputTokens` omitted**: OpenAI providers omit `max_tokens` from the wire (API default applies); Anthropic falls back to `32768` because its API requires the field.
+- **Output budget:** `RunOptions.maxOutputTokens` overrides `AgentOptions.maxOutputTokens`, then the resolved model's `outputTokenBudget`, then a known provider default. Anthropic exposes `32768`; OpenAI with no requested/default budget leaves the wire field absent. The configured model output capability can lower an existing budget but never creates a desired budget by itself.
 - **`mcpServers`** connect lazily on the first `session()` and disconnect on `close()`. A connect failure throws from `session()`.
 - **`systemPrompt`** is APPENDED — the cache-optimized default prompt stays intact. Dynamic content (date, etc.) lives in the first user message, not the system prompt.
 - **`hooks`** registers typed interception points (`preToolUse`, `postToolUse`, `userPromptSubmit`, `stop`, `preCompact`). Invalid config throws `ConfigError` from the constructor. See `building-agents.md` → Hooks.
 - **`askUser`** wires a handler for the `AskUser` tool; the tool is registered only when this is present. See `building-agents.md` → AskUser.
+
+## Effective model configuration
+
+```ts
+interface ModelConfiguration {
+  model: string;                 // exact effective provider model ID
+  contextWindow?: number;         // reliable configured total context capacity
+  maxOutputTokens?: number;       // reliable model/route output capability
+  outputTokenBudget?: number;     // desired default request budget for this model
+}
+```
+
+`resolveModel(requestedModel)` runs once per assistant turn after a one-turn Skill model choice.
+Return the effective model and its configured values, or `undefined` to use the requested model and
+provider behavior. A host with a persisted execution phase can return that phase's exact model.
+The result is captured before compaction and retained for the context-error retry. The next logical
+turn resolves again. Subagent sessions use the same Agent resolver; their own Skill choices remain
+session-local. Run-only output overrides remain specific to that run and are not inherited by a child.
+
+Capacity is not a request budget. Omitted OpenAI budgets stay unspecified; wrappers should forward
+an optional `provider.defaultOutputTokens(model)` along with `contextWindow` when a provider has a
+known required-field default. All supplied token counts must be positive safe integers. A resolved
+budget that is at least the explicitly configured context cannot leave room for an input and yields
+`ConfigError` before transport, including the default summary's own budget. No such new strict check is based on an SDK fallback context value.
+
+The SDK compacts when last reported input reaches `min(0.8 * context, context - requested output)`.
+An unspecified output budget has no invented reserve. The default summary uses the same selected
+model and its own `min(4096, model output capability)` output budget. A custom strategy receives the
+selected `model`, reliable host-configured `contextWindow` when supplied (not an SDK fallback), and optional model capability `maxOutputTokens`.
+
+This preflight is based on previous provider usage, not local tokenization of newly appended text.
+A first request or resumed session without usage cannot be pre-measured. A strategy may be unable
+to reduce a short history, and the summary request itself can exceed a smaller model's context.
+Those failures surface normally; the SDK does not silently switch to another model. Skill listing
+length is a static provider-based hint and does not invoke the host model resolver as a side effect.
+
+A Skill's explicit `model` is exact, including any suffix it actually names. The SDK does not copy
+`[1m]` from its parent. Omission or `model: inherit` keeps the Agent's selection. The Skill choice
+lasts for one logical turn including its context retry, then returns to the Agent's selection.
 
 ## Agent methods
 
@@ -193,7 +233,7 @@ ProviderError, ConfigError, SkillError, HookError
 
 **Aborting:** call `session.abort()` or pass a `RunOptions.signal`. The internal controller is recreated fresh per run, so aborting while idle is a no-op for the next run.
 
-**Compaction:** `AgentOptions.compaction` (a `CompactionStrategy`) defaults to a built-in that triggers around 80% of the context window. Override only when you need custom summarization. Emits a `compaction` event when it runs.
+**Compaction:** `AgentOptions.compaction` (a `CompactionStrategy`) defaults to a built-in triggered at 80% input use or sooner when the resolved output budget needs the remaining context. Model configuration above explains the selection and retry contract. Override only when you need custom summarization. Emits a `compaction` event when it runs.
 
 ## Common types
 

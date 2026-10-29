@@ -4,8 +4,7 @@ import type { Tool, ToolContext, ToolResult } from "./base.js";
 import { ToolExecutionError } from "../core/errors.js";
 import type { Skill } from "../skills/types.js";
 import { substituteSkillBody } from "../skills/substitute.js";
-import { resolveModelOverride } from "../skills/overlay.js";
-import type { ModelId, SkillOverlay } from "../core/types.js";
+import type { SkillOverlay } from "../core/types.js";
 import type { SessionInternal } from "../core/session.js";
 
 export interface SkillInput {
@@ -27,8 +26,6 @@ export interface SkillToolOptions {
   skills: ReadonlyMap<string, Skill>;
   /** Look up session internals by id; returns undefined for unknown sessions. */
   getSessionInternal: (sessionId: string) => SessionInternal | undefined;
-  /** Returns the active session model so [1m] suffix can be carried forward. */
-  getSessionModel: (sessionId: string) => ModelId;
 }
 
 export class SkillTool implements Tool<SkillInput> {
@@ -99,8 +96,8 @@ export class SkillTool implements Tool<SkillInput> {
       const { allowedTools, model } = skill.frontmatter;
       const overlay: SkillOverlay = {};
       if (allowedTools && allowedTools.length > 0) overlay.allowedTools = allowedTools.slice();
-      if (model) {
-        overlay.modelOverride = resolveModelOverride(model, this.opts.getSessionModel(ctx.sessionId));
+      if (model && model !== "inherit") {
+        overlay.modelOverride = model;
       }
       if (overlay.allowedTools !== undefined || overlay.modelOverride !== undefined) {
         si.pendingSkillOverlay = overlay;

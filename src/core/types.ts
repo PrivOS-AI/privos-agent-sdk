@@ -99,7 +99,7 @@ export interface InvokedSkillRecord {
 export interface SkillOverlay {
   /** Additive allow set; union with existing rules for the next turn only. */
   allowedTools?: string[];
-  /** Model override; preserves [1m] suffix from session model when needed. */
+  /** Exact model choice for the next assistant turn, including its context retry. */
   modelOverride?: ModelId;
 }
 

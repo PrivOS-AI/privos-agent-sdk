@@ -437,6 +437,10 @@ export class AnthropicProvider extends BaseProvider {
     return KNOWN_ANTHROPIC_CONTEXT[model] ?? DEFAULT_CONTEXT;
   }
 
+  override defaultOutputTokens(_model: ModelId): number {
+    return 32768;
+  }
+
   /** Test seam — production opens via SDK; tests override to inject fake events. */
   protected openStream(
     payload: AnthropicRequestPayload,

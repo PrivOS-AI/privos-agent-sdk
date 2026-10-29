@@ -7,7 +7,7 @@
  */
 
 import { Agent, loadConfig } from "@privos_ai/privos-agent-sdk";
-import type { LoadedConfig } from "@privos_ai/privos-agent-sdk";
+import type { AgentOptions, LoadedConfig, ModelConfiguration } from "@privos_ai/privos-agent-sdk";
 import { AnthropicProvider } from "@privos_ai/privos-agent-sdk/providers";
 import type { Tool } from "@privos_ai/privos-agent-sdk/tools";
 import type { SessionStore } from "@privos_ai/privos-agent-sdk/sessions";
@@ -23,9 +23,12 @@ const _loadConfig: typeof loadConfig = loadConfig;
 type _Tool = Tool;
 type _SessionStore = SessionStore;
 type _LoadedConfig = LoadedConfig;
+const _configuration: ModelConfiguration = { model: "configured-model", contextWindow: 200_000, maxOutputTokens: 64_000, outputTokenBudget: 40_000 };
+const _resolver: AgentOptions["resolveModel"] = requestedModel => ({ ..._configuration, model: requestedModel });
 
 // Satisfy "declared but never read" for value references.
 void _agent;
 void _provider;
 void _engine;
 void _loadConfig;
+void _resolver;

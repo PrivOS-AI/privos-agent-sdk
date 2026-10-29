@@ -13,7 +13,7 @@ export interface SkillFrontmatter {
   arguments?: string[];
   /** Optional hint string surfaced in skill_listing alongside the description. */
   argumentHint?: string;
-  /** Optional per-skill model override. */
+  /** Exact one-turn model override. Omission or "inherit" keeps the Agent's model selection. */
   model?: string;
   /** Optional semantic version. */
   version?: string;

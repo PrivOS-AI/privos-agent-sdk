@@ -45,7 +45,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map(),
       getSessionInternal: () => undefined,
-      getSessionModel: () => "claude-opus-4-7",
     });
     const out = await tool.execute({ skill: "missing" }, mkCtx());
     expect(out.is_error).toBe(true);
@@ -57,7 +56,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => undefined,
-      getSessionModel: () => "claude-opus-4-7",
     });
     const out = await tool.execute({ skill: "disabled" }, mkCtx());
     expect(out.is_error).toBe(true);
@@ -70,7 +68,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => si,
-      getSessionModel: () => "claude-opus-4-7",
     });
     const out = await tool.execute({ skill: "greet", args: "world" }, mkCtx());
     expect(out.is_error).toBe(false);
@@ -86,7 +83,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => undefined,
-      getSessionModel: () => "claude-opus-4-7",
     });
     const out = await tool.execute({ skill: "/greet" }, mkCtx());
     expect(out.is_error).toBe(false);
@@ -99,22 +95,20 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => si,
-      getSessionModel: () => "claude-opus-4-7",
     });
     await tool.execute({ skill: "with-tools" }, mkCtx());
     expect(si.pendingSkillOverlay).toEqual({ allowedTools: ["Bash", "Read"] });
   });
 
-  it("pushes model overlay carrying [1m] suffix from session", async () => {
+  it("keeps the exact explicit model instead of adding a context suffix", async () => {
     const skill = mkSkill("with-model", { model: "claude-sonnet-4-6" });
     const si = mkSessionInternal();
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => si,
-      getSessionModel: () => "claude-opus-4-7[1m]",
     });
     await tool.execute({ skill: "with-model" }, mkCtx());
-    expect(si.pendingSkillOverlay).toEqual({ modelOverride: "claude-sonnet-4-6[1m]" });
+    expect(si.pendingSkillOverlay).toEqual({ modelOverride: "claude-sonnet-4-6" });
   });
 
   it("pushes both allowed_tools and model overlays together", async () => {
@@ -123,7 +117,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map([[skill.name, skill]]),
       getSessionInternal: () => si,
-      getSessionModel: () => "claude-opus-4-7",
     });
     await tool.execute({ skill: "both" }, mkCtx());
     expect(si.pendingSkillOverlay).toEqual({
@@ -132,11 +125,18 @@ describe("SkillTool", () => {
     });
   });
 
+  it("treats inherit as keeping the Agent model selection", async () => {
+    const skill = mkSkill("inherited", { model: "inherit" });
+    const si = mkSessionInternal();
+    const tool = new SkillTool({ skills: new Map([[skill.name, skill]]), getSessionInternal: () => si });
+    await tool.execute({ skill: "inherited" }, mkCtx());
+    expect(si.pendingSkillOverlay).toBeUndefined();
+  });
+
   it("validate rejects empty skill name", () => {
     const tool = new SkillTool({
       skills: new Map(),
       getSessionInternal: () => undefined,
-      getSessionModel: () => "claude-opus-4-7",
     });
     expect(() => tool.validate({ skill: "" })).toThrow();
   });
@@ -145,7 +145,6 @@ describe("SkillTool", () => {
     const tool = new SkillTool({
       skills: new Map(),
       getSessionInternal: () => undefined,
-      getSessionModel: () => "claude-opus-4-7",
     });
     expect(() => tool.validate({ skill: "x", args: 123 as unknown as string })).toThrow();
   });

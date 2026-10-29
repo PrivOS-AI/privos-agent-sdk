@@ -358,11 +358,11 @@ describe("maybeCompact", () => {
     await agent.close();
   });
 
-  it("returns false when projected tokens < 80% of context window", async () => {
+  it("returns false when input is below both the 80% and output-fit thresholds", async () => {
     const provider = new MockProvider();
     // contextWindow = 200_000 (default MockProvider), maxOutputTokens = 8192
     // 0.8 * 200_000 = 160_000
-    // input_tokens needs to be < 160_000 - 8192 = 151_808
+    // Output fits in the existing 40_000 headroom, so input threshold stays 160_000.
     const { agent } = makeAgent(provider);
     const session = await agent.session();
 
@@ -381,7 +381,7 @@ describe("maybeCompact", () => {
   it("returns true and compacts when threshold is crossed", async () => {
     const provider = new MockProvider();
     // contextWindow = 200_000, threshold at 0.8 = 160_000
-    // We'll set input_tokens = 155_000, maxOutputTokens = 8192 → projected = 163_192 > 160_000
+    // Input 161_000 crosses the 160_000 input threshold; the 8192 output budget already fits in its headroom.
     // defaultCompaction will try to call provider.stream for summarization;
     // we need to script a summary response first (>10 assistant turns needed in providerView)
     provider.enqueue({
@@ -410,7 +410,7 @@ describe("maybeCompact", () => {
     si.fullHistory.length = 0;
     for (const m of history) si.fullHistory.push(m);
 
-    si.lastUsage = { input_tokens: 155_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
+    si.lastUsage = { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
 
     const fullHistoryLengthBefore = si.fullHistory.length;
 
@@ -428,7 +428,7 @@ describe("maybeCompact", () => {
     expect(si.lastCompactionInfo!.type).toBe("compaction");
     expect(si.lastCompactionInfo!.messages_before).toBe(history.length);
     expect(si.lastCompactionInfo!.strategy).toBe("default-keep-recent-10");
-    expect(si.lastCompactionInfo!.tokens_before).toBe(155_000);
+    expect(si.lastCompactionInfo!.tokens_before).toBe(161_000);
     expect(si.lastCompactionInfo!.tokens_after).toBe(0); // unknown until next response
     // The summarization call's usage is surfaced for cost accounting.
     expect(si.lastCompactionInfo!.summary_usage).toEqual({ input_tokens: 100, output_tokens: 5 });
@@ -463,7 +463,7 @@ describe("maybeCompact", () => {
     si.providerView.length = 0;
     for (const m of history) si.providerView.push(m);
 
-    // 161_000 total prompt, 159_000 of it cached reads. 161_000 + 8192 > 160_000.
+    // 161_000 total prompt, 159_000 of it cached reads; input alone exceeds 160_000.
     si.lastUsage = { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 159_000, cache_creation_tokens: 0 };
 
     const result = await maybeCompact(si, ai, new AbortController().signal);
@@ -478,7 +478,7 @@ describe("maybeCompact", () => {
     // Even though usage is above 80%, maybeCompact must return false so the loop emits no CompactionEvent.
     const provider = new MockProvider();
     // maxOutputTokens = 8192; contextWindow = 200_000; threshold = 160_000
-    // projected = 155_000 + 8192 = 163_192 > 160_000 → above threshold
+    // Input 161_000 exceeds the 160_000 threshold.
     const { agent } = makeAgent(provider, { maxOutputTokens: 8192 });
     const session = await agent.session();
 
@@ -490,7 +490,7 @@ describe("maybeCompact", () => {
     si.providerView.length = 0;
     for (const m of history) si.providerView.push(m);
 
-    si.lastUsage = { input_tokens: 155_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
+    si.lastUsage = { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
 
     const result = await maybeCompact(si, ai, new AbortController().signal);
     expect(result).toBe(false);
@@ -618,14 +618,14 @@ describe("PreCompact hook", () => {
     const history = buildHistory(15);
     si.providerView.length = 0;
     for (const m of history) si.providerView.push(m);
-    si.lastUsage = { input_tokens: 155_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
+    si.lastUsage = { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 };
 
     const result = await maybeCompact(si, ai, new AbortController().signal);
     expect(result).toBe(true);
     expect(seen).toHaveLength(1);
     expect(seen[0]!.trigger).toBe("threshold");
     expect(seen[0]!.messages_before).toBe(history.length);
-    expect(seen[0]!.tokens_before).toBe(155_000);
+    expect(seen[0]!.tokens_before).toBe(161_000);
     expect(si.lastCompactionHookErrors![0]!.hook_event).toBe("PreCompact");
     expect(si.lastCompactionHookErrors![0]!.message).toBe("pc boom");
 
@@ -726,8 +726,8 @@ describe("compaction strategy override", () => {
 describe("runLoop — compaction trigger via high token usage", () => {
   it("emits CompactionEvent before turn 2 when usage crosses threshold after turn 1", async () => {
     // contextWindow = 200_000 (MockProvider default), threshold = 160_000
-    // maxOutputTokens = 8192 → need input_tokens >= 160_000 - 8192 = 151_808
-    // We'll report input_tokens = 155_000 on turn 1.
+    // maxOutputTokens = 8192 fits inside the 20% headroom, so input threshold is 160_000.
+    // We'll report input_tokens = 161_000 on turn 1.
     // For compaction to run, providerView needs >10 assistant messages.
     // But we only have the turn 1 assistant message in providerView when maybeCompact runs on turn 2.
     // So defaultCompaction won't actually compact (≤10 turns → returns unchanged).
@@ -743,7 +743,7 @@ describe("runLoop — compaction trigger via high token usage", () => {
         {
           type: "message_end",
           stop_reason: "end_turn",
-          usage: { input_tokens: 155_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 },
+          usage: { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 },
         },
       ],
     });

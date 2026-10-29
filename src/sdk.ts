@@ -3,6 +3,7 @@
 // Top-level classes most consumers use.
 export { Agent } from "./core/agent.js";
 export type { AgentOptions } from "./core/agent.js";
+export type { ModelConfiguration } from "./core/model-config.js";
 export { Session } from "./core/session.js";
 export type { RunOptions } from "./core/session.js";
 

@@ -1025,7 +1025,7 @@ describe("runLoop — full tool round-trip", () => {
 describe("runLoop — compaction trigger via threshold", () => {
   it("emits CompactionEvent before AssistantEvent when usage crosses 80% threshold on subsequent run", async () => {
     // MockProvider contextWindow = 200_000; threshold = 160_000
-    // Turn 1 reports input_tokens = 155_000, maxOutputTokens = 8192 → projected = 163_192 > 160_000
+    // Turn 1 reports input_tokens = 161_000, above the 160_000 input threshold.
     // Override strategy that never calls provider stream (avoids needing extra enqueue)
     const noopStrategy: CompactionStrategy = {
       id: "noop-loop-test",
@@ -1042,7 +1042,7 @@ describe("runLoop — compaction trigger via threshold", () => {
         {
           type: "message_end" as const,
           stop_reason: "end_turn" as const,
-          usage: { input_tokens: 155_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 },
+          usage: { input_tokens: 161_000, output_tokens: 500, cache_read_tokens: 0, cache_creation_tokens: 0 },
         },
       ],
     });

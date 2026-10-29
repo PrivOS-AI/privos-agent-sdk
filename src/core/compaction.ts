@@ -5,11 +5,16 @@ import type { BaseProvider, ProviderRequest } from "../providers/base.js";
 import type { SessionInternal } from "./session.js";
 import type { AgentInternal } from "./agent.js";
 import type { CompactionEvent } from "./events.js";
+import { resolveOutputTokenBudget, resolveTurnModel, type TurnModel } from "./model-config.js";
 
 export interface CompactionContext {
   messages: Message[];
   provider: BaseProvider;
   model: ModelId;
+  /** Configured model output capability; summary requests retain their own smaller budget. */
+  maxOutputTokens?: number;
+  /** Reliable host-configured context, absent when the SDK has only a provider fallback. */
+  contextWindow?: number;
   signal: AbortSignal;
   /**
    * Optional sink a strategy populates with the usage of any summarization call
@@ -108,13 +113,14 @@ export async function summarizeWithProvider(
   model: ModelId,
   older: Message[],
   signal: AbortSignal,
+  maxOutputTokens = 4096,
 ): Promise<{ text: string; usage?: Usage }> {
   const req: ProviderRequest = {
     model,
     system: [{ type: "text", text: SUMMARY_PROMPT, cacheable: false }],
     tools: [],
     messages: older,
-    max_output_tokens: 4096,
+    max_output_tokens: maxOutputTokens,
     signal,
     cache_prompt: false,
   };
@@ -139,14 +145,15 @@ export async function summarizeWithProvider(
 export const defaultCompaction: CompactionStrategy = {
   id: "default-keep-recent-10",
 
-  async compact({ messages, provider, model, signal, usageReport }: CompactionContext): Promise<Message[]> {
+  async compact({ messages, provider, model, maxOutputTokens, contextWindow, signal, usageReport }: CompactionContext): Promise<Message[]> {
     const recent = lastNTurnBoundaries(messages, 10);
     const older = messages.slice(0, messages.length - recent.length);
 
     // No older content — nothing to compact
     if (older.length === 0) return messages;
 
-    const { text: summaryText, usage } = await summarizeWithProvider(provider, model, older, signal);
+    const budget = resolveOutputTokenBudget(4096, maxOutputTokens, contextWindow)!;
+    const { text: summaryText, usage } = await summarizeWithProvider(provider, model, older, signal, budget);
     if (usageReport) usageReport.usage = usage;
 
     const summaryMessage: Message = {
@@ -172,8 +179,10 @@ async function runCompactionImpl(
   signal: AbortSignal,
   strategy: CompactionStrategy,
   trigger: "threshold" | "forced",
+  selected: TurnModel,
 ): Promise<boolean> {
-  const { provider, model } = ai;
+  const provider = ai.provider;
+  const model = selected.model;
   const before = {
     messages: si.providerView.length,
     tokens: si.lastUsage?.input_tokens ?? 0,
@@ -201,6 +210,8 @@ async function runCompactionImpl(
     messages: si.providerView.slice(),
     provider,
     model,
+    ...(selected.configuredContextWindow !== undefined && { contextWindow: selected.configuredContextWindow }),
+    ...(selected.maxOutputCapacity !== undefined && { maxOutputTokens: selected.maxOutputCapacity }),
     signal,
     usageReport,
   });
@@ -241,20 +252,18 @@ export async function maybeCompact(
   si: SessionInternal,
   ai: AgentInternal,
   signal: AbortSignal,
+  selected: TurnModel = resolveTurnModel(ai),
 ): Promise<boolean> {
   if (si.lastUsage === undefined) return false;
 
   const strategy = ai.compaction ?? defaultCompaction;
-  const limit = ai.provider.contextWindow(ai.model);
-  // Reserve the Agent-level cap when set; otherwise assume 32768 — same value
-  // the Anthropic provider uses as its required-field fallback, conservative
-  // enough that we don't trigger compaction late.
-  const projectedReserve = ai.maxOutputTokens ?? 32768;
-  const projected = si.lastUsage.input_tokens + projectedReserve;
+  const limit = selected.contextWindow;
+  // Compact at the usual input threshold, or sooner when the actual requested
+  // output needs more than the remaining headroom. Capacity alone is no budget.
+  const threshold = Math.min(0.8 * limit, limit - (selected.maxOutputTokens ?? 0));
+  if (si.lastUsage.input_tokens < threshold) return false;
 
-  if (projected < 0.8 * limit) return false;
-
-  return runCompactionImpl(si, ai, signal, strategy, "threshold");
+  return runCompactionImpl(si, ai, signal, strategy, "threshold", selected);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,9 +279,10 @@ export async function runForcedCompaction(
   si: SessionInternal,
   ai: AgentInternal,
   signal: AbortSignal,
+  selected: TurnModel = resolveTurnModel(ai),
 ): Promise<boolean> {
   const strategy = ai.compaction ?? defaultCompaction;
-  return runCompactionImpl(si, ai, signal, strategy, "forced");
+  return runCompactionImpl(si, ai, signal, strategy, "forced", selected);
 }
 
 // Re-export the CompactionEvent type so the loop can read lastCompactionInfo

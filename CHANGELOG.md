@@ -2,6 +2,35 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.4] — 2026-10-29
+
+### Added
+
+- `AgentOptions.resolveModel(requestedModel)` selects an exact effective model and optional
+  `ModelConfiguration` (`contextWindow`, output capability `maxOutputTokens`, desired `outputTokenBudget`).
+  The SDK resolves it once per assistant turn, after any Skill override, and uses that same selection
+  for compaction, the normal request and its one-shot context-error retry. Hosts can use it for a
+  persistent model phase without rewriting provider requests or context queries.
+- Optional `BaseProvider.defaultOutputTokens(model)` exposes a known request default. Anthropic
+  returns 32768; providers without a known client-side default leave it absent. Provider wrappers
+  should forward it, like `contextWindow`.
+
+### Fixed
+
+- Request budget precedence is Run option, Agent option, model budget, then known provider default.
+  A configured output capability bounds a selected budget but does not invent one. OpenAI requests
+  with no desired/default budget continue to omit the wire field; a model's full capacity is not
+  automatically requested or reserved. Summary requests keep their own 4096 budget, bounded by the
+  selected model's capability rather than replaced by the normal request budget.
+- Compaction uses the selected model's context and the actual resolved request budget. It triggers
+  at the earlier of 80% input use and `context - output budget`, so the 20% headroom does not reserve
+  the requested output a second time. Without a known/requested budget there is no guessed reserve.
+  A normal or default-summary budget at least as large as an explicitly configured context reports `ConfigError`; it is not
+  silently reduced. This check does not treat an SDK alias fallback as authoritative configuration.
+- A Skill's explicit model ID stays exact; it no longer silently acquires the parent model's `[1m]`
+  suffix. Omission or `model: inherit` keeps the Agent model selection. A context-error retry stays
+  on the selected Skill model and budget; the next normal turn resumes the Agent selection.
+
 ## [0.5.3] — 2026-10-29
 
 ### Fixed

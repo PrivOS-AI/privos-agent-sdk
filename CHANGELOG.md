@@ -2,6 +2,17 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.3] — 2026-10-29
+
+### Fixed
+
+- 0.5.2 changed the `openStream` seam: overrides received a per-call child signal instead of the request signal, which
+  broke hosts that key per-request state by that signal (privos-sandbox's completion tracking lost every finish
+  reason). `openStream` overrides receive the request signal again. The default `openStream` of the Anthropic, OpenAI
+  Chat and OpenAI Responses providers now creates the child signal itself and unlinks it when the vendor stream settles
+  (`done()`). The memory fix from 0.5.2 is unchanged: on Node, 200 calls with 1 MB bodies retained 200.5 MB on 0.5.1
+  and 0.2 MB on 0.5.3.
+
 ## [0.5.2] — 2026-10-29
 
 ### Fixed

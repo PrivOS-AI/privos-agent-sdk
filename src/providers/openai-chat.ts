@@ -23,6 +23,7 @@ import {
   type ProviderStreamEvent,
   type SystemBlock,
 } from "./base.js";
+import { childSignal } from "../core/abort.js";
 import { AbortError } from "../core/errors.js";
 import { sanitizeLoneSurrogates } from "./lone-surrogates.js";
 import { mapOpenAIError } from "./openai-errors.js";
@@ -475,10 +476,12 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
     payload: ChatRequestPayload,
     req: ProviderRequest,
   ): AsyncIterable<ProviderStreamEvent> {
+    const call = childSignal(req.signal);
     let wire: WireStream | undefined;
     try {
-      wire = this.openStream(payload, req.signal, 0);
+      wire = this.openStream(payload, call.signal, 0);
     } catch (err) {
+      call.dispose();
       throw mapOpenAIError(err);
     }
 
@@ -492,6 +495,7 @@ export class OpenAIChatCompletionsProvider extends BaseProvider {
       throw mapOpenAIError(err);
     } finally {
       wire.controller?.abort?.();
+      call.dispose();
     }
   }
 }

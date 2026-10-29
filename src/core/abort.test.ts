@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { getEventListeners } from "node:events";
-import { anySignal, throwIfAborted } from "./abort.js";
+import { anySignal, childSignal, throwIfAborted } from "./abort.js";
 import { AbortError } from "./errors.js";
 
 describe("anySignal", () => {
@@ -39,6 +39,20 @@ describe("anySignal", () => {
       void anySignal([caller.signal, undefined]);
     }
     expect(getEventListeners(caller.signal, "abort").length).toBe(0);
+  });
+});
+
+describe("childSignal", () => {
+  it("follows the parent and unlinks on dispose", () => {
+    const parent = new AbortController();
+    const a = childSignal(parent.signal);
+    a.dispose();
+    expect(getEventListeners(parent.signal, "abort").length).toBe(0);
+    const b = childSignal(parent.signal);
+    parent.abort("stop");
+    expect(b.signal.aborted).toBe(true);
+    expect(b.signal.reason).toBe("stop");
+    expect(childSignal(parent.signal).signal.aborted).toBe(true);
   });
 });
 

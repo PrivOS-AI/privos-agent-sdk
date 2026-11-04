@@ -94,7 +94,7 @@ const SCHEMA = {
         type: "object",
         properties: {
           question: { type: "string", description: "The complete question to ask. Clear, specific, ends with a question mark." },
-          header: { type: "string", description: "Very short label displayed as a chip/tag (max 12 chars), e.g. 'Approach'." },
+          header: { type: "string", description: "1–3 plain words naming the topic (e.g. \"Deploy target\"), max 12 chars; never an ID, ticket or code." },
           options: {
             type: "array",
             description: "2-4 distinct, mutually exclusive choices (unless multi_select). Do NOT add an 'Other' option — free-text answers are always available to the user. Omit when `credential` is set.",
@@ -133,7 +133,9 @@ const DESCRIPTION =
   `Asks the user clarifying questions when you are blocked on a decision only ` +
   `they can make: ambiguous requirements, multiple valid approaches with ` +
   `meaningfully different trade-offs, missing context you cannot discover from ` +
-  `the codebase, or risky/irreversible choices. Present 1-4 questions, each with ` +
+  `the codebase, or risky/irreversible choices. ` +
+  `Before calling, write 2–4 short lines in your reply: what you found, why you need a decision, and which option you recommend. ` +
+  `Present 1-4 questions, each with ` +
   `2-4 distinct options. Put your recommended option first and append ` +
   `'(Recommended)' to its label. Set multi_select: true when choices are ` +
   `combinable. The user can always answer with free text instead of picking an ` +

@@ -2,6 +2,14 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.5.5] — 2026-11-04
+
+### Changed
+
+- The `AskUser` tool description asks the model to write 2–4 short lines (what it found, why it needs a
+  decision, which option it recommends) before calling, so a paused reply is never empty. The `header`
+  description asks for 1–3 plain topic words and never an ID, ticket or code.
+
 ## [0.5.4] — 2026-10-29
 
 ### Added

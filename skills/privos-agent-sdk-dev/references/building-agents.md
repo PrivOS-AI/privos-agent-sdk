@@ -202,7 +202,7 @@ new Agent({ provider, model, askUser });
 ### Credential questions
 
 A question may carry `credential` (`AskUserCredential`: `host`, optional `path_prefix`, `purpose`, optional `env_name`,
-`base_url_env_name`, `rotate`) to ask for an API key or token. It must be the **only** question and has `options: []`.
+`base_url_env_name`, `rotate`, `auth_type` (`bearer` | `basic` | `header` | `query`), `auth_name`) to ask for an API key or token. It must be the **only** question and has `options: []`.
 Detect it with `q.credential`, never with `options.length`. `validate()` copies only the known credential fields, so
 anything else the model sends (for example `request_id`) is dropped.
 

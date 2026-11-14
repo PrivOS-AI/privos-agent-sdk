@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { AskUserTool } from "./ask-user.js";
+import { AskUserTool, isBlankCredential } from "./ask-user.js";
 import { AbortError, ToolExecutionError } from "../core/errors.js";
 import type { AskUserHandler, AskUserResponse } from "./ask-user.js";
 import type { ToolContext } from "./base.js";
@@ -520,6 +520,29 @@ describe("AskUserTool credential questions", () => {
     });
     invalid({ questions: [credQ({}, { envName: "openai_key" })] }, /\.env_name must match/);
     invalid({ questions: [credQ({}, { envName: "A_KEY", env_name: "B_KEY" })] }, /\.envName and \.env_name disagree/);
+  });
+
+  test("auth type and name pass through, camelCase accepted", () => {
+    const tool = makeTool(async () => ({ answers: [{ selected: ["x"] }] }));
+    const basic = tool.validate({ questions: [credQ({}, { authType: "basic", authName: "ignored" })] });
+    expect(basic.questions[0]!.credential!.auth_type).toBe("basic");
+    expect(basic.questions[0]!.credential!.auth_name).toBeUndefined();
+    const header = tool.validate({ questions: [credQ({}, { auth_type: "header", auth_name: "X-Api-Key" })] });
+    expect(header.questions[0]!.credential).toMatchObject({ auth_type: "header", auth_name: "X-Api-Key" });
+    const query = tool.validate({ questions: [credQ({}, { authType: "query", authName: "api_key" })] });
+    expect(query.questions[0]!.credential).toMatchObject({ auth_type: "query", auth_name: "api_key" });
+  });
+
+  test("rejects a bad auth type or name", () => {
+    invalid({ questions: [credQ({}, { auth_type: "digest" })] }, /\.auth_type must be one of/);
+    invalid({ questions: [credQ({}, { auth_type: "header", auth_name: "bad name" })] }, /\.auth_name must match/);
+    invalid({ questions: [credQ({}, { auth_type: "query" })] }, /\.auth_name is required/);
+    invalid({ questions: [credQ({}, { authType: "basic", auth_type: "bearer" })] }, /\.authType and \.auth_type disagree/);
+  });
+
+  test("a blank credential with the default auth type is no credential", () => {
+    expect(isBlankCredential({ host: "", purpose: "", auth_type: "bearer", auth_name: "" })).toBe(true);
+    expect(isBlankCredential({ host: "", purpose: "", auth_type: "basic" })).toBe(false);
   });
 
   test("must be the only question", () => {

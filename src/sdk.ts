@@ -48,7 +48,7 @@ export type {
 // AskUser tool types (for consumers wiring their own handler).
 export type {
   AskUserHandler, AskUserRequest, AskUserResponse, AskUserAnswer,
-  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential,
+  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential, AskUserAuthType,
 } from "./tools/ask-user.js";
 
 // Errors.

@@ -16,6 +16,8 @@ export interface AskUserOption {
  * ever flows back through this tool. The host maps these snake_case names to
  * its own and decides the (value-free) answer text.
  */
+export type AskUserAuthType = "bearer" | "basic" | "header" | "query";
+
 export interface AskUserCredential {
   /** Lowercase host the key is for, e.g. "api.openai.com". A leading "*." is allowed. */
   host: string;
@@ -29,6 +31,15 @@ export interface AskUserCredential {
   base_url_env_name?: string;
   /** true: the stored key for this host no longer works; ask for a new value. */
   rotate?: boolean;
+  /**
+   * How the API takes the key; the host's form opens on this choice. "bearer" (default):
+   * Authorization: Bearer; "basic": a login pair the user types in the form, sent as Authorization: Basic;
+   * "header": a custom header named auth_name (default x-api-key); "query": a query
+   * parameter named auth_name.
+   */
+  auth_type?: AskUserAuthType;
+  /** Header name for auth_type "header", query parameter name for "query" (required there). */
+  auth_name?: string;
   /**
    * Set by the host on its own copy of the question to correlate a pending
    * request. validate() never copies it from model input.
@@ -79,8 +90,11 @@ export type AskUserResponse =
 /** A `credential` object whose every value is empty: no host, no purpose, nothing else set. */
 export function isBlankCredential(raw: unknown): boolean {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return false;
-  return Object.values(raw as Record<string, unknown>).every(
-    (v) => v == null || v === false || (typeof v === "string" && v.trim() === ""),
+  // "bearer" is the default auth type, so a schema-filling model's "bearer" says nothing either.
+  return Object.entries(raw as Record<string, unknown>).every(
+    ([k, v]) =>
+      v == null || v === false || (typeof v === "string" && v.trim() === "") ||
+      ((k === "auth_type" || k === "authType") && v === "bearer"),
   );
 }
 
@@ -124,6 +138,13 @@ const SCHEMA = {
               env_name: { type: "string", description: "Env var name for the key, e.g. 'OPENAI_API_KEY'." },
               base_url_env_name: { type: "string", description: "Env var name for the base URL, e.g. 'OPENAI_BASE_URL'." },
               rotate: { type: "boolean", description: "true when the stored key for this host was rejected and a new one is needed." },
+              auth_type: {
+                type: "string",
+                enum: ["bearer", "basic", "header", "query"],
+                description:
+                  "How the API takes the key: bearer (default), basic (login pair the user types in the form, sent as Authorization: Basic, e.g. DataForSEO), header (custom header named auth_name, default x-api-key), query (query parameter named auth_name).",
+              },
+              auth_name: { type: "string", description: "Header name for auth_type 'header', query parameter name for 'query' (required there)." },
             },
             required: ["host", "purpose"],
           },
@@ -165,7 +186,13 @@ const CAMEL_CREDENTIAL_FIELDS = [
   ["pathPrefix", "path_prefix"],
   ["envName", "env_name"],
   ["baseUrlEnvName", "base_url_env_name"],
+  ["authType", "auth_type"],
+  ["authName", "auth_name"],
 ] as const;
+
+const AUTH_TYPES: readonly AskUserAuthType[] = ["bearer", "basic", "header", "query"];
+const AUTH_HEADER_NAME_RE = /^[A-Za-z][A-Za-z0-9-]{0,63}$/;
+const AUTH_QUERY_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
 
 export class AskUserTool implements Tool<AskUserInput> {
   readonly name = "AskUser";
@@ -305,12 +332,23 @@ export class AskUserTool implements Tool<AskUserInput> {
       }
     }
     if (c.rotate !== undefined && typeof c.rotate !== "boolean") return fail(".rotate must be a boolean");
+    if (c.auth_type !== undefined && !AUTH_TYPES.includes(c.auth_type as AskUserAuthType)) {
+      return fail(`.auth_type must be one of ${AUTH_TYPES.join(", ")}`);
+    }
+    if (c.auth_name !== undefined) {
+      const re = c.auth_type === "query" ? AUTH_QUERY_NAME_RE : AUTH_HEADER_NAME_RE;
+      if (typeof c.auth_name !== "string" || !re.test(c.auth_name)) return fail(`.auth_name must match ${re.source}`);
+    }
+    if (c.auth_type === "query" && c.auth_name === undefined) return fail(".auth_name is required when auth_type is 'query'");
 
     const out: AskUserCredential = { host: c.host, purpose: c.purpose };
     if (c.path_prefix !== undefined) out.path_prefix = c.path_prefix as string;
     if (c.env_name !== undefined) out.env_name = c.env_name as string;
     if (c.base_url_env_name !== undefined) out.base_url_env_name = c.base_url_env_name as string;
     if (c.rotate !== undefined) out.rotate = c.rotate as boolean;
+    if (c.auth_type !== undefined) out.auth_type = c.auth_type as AskUserAuthType;
+    // A name only means something for a header or query key.
+    if (c.auth_name !== undefined && (c.auth_type === "header" || c.auth_type === "query")) out.auth_name = c.auth_name as string;
     return out;
   }
 

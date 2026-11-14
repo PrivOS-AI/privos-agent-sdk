@@ -4,6 +4,13 @@ All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
 ## Unreleased
 
+### Added
+
+- `AskUser` credential questions take `auth_type` (`bearer` default, `basic`, `header`, `query`) and `auth_name`
+  (camelCase `authType`/`authName` accepted). The host's key form opens on that auth type; for `basic` the user types
+  the login pair and the form sends `Authorization: Basic`. `auth_name` names the header or query parameter and is
+  required for `query`.
+
 ### Changed
 
 - **Breaking for models, not hosts:** every `AskUser` question except a credential question must carry

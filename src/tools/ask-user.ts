@@ -39,6 +39,11 @@ export interface AskUserCredential {
 export interface AskUserQuestion {
   /** The complete question, e.g. "Which storage backend should the cache use?" */
   question: string;
+  /**
+   * What the user needs to answer without reading anything else: what was found and which items the
+   * question is about. Hosts show it above the question. Absent only on a credential question.
+   */
+  context?: string;
   /** Short chip/tag label for UIs, max 12 characters, e.g. "Backend". */
   header: string;
   /** 2–4 distinct choices. Empty when `credential` is set. */
@@ -94,6 +99,7 @@ const SCHEMA = {
         type: "object",
         properties: {
           question: { type: "string", description: "The complete question to ask. Clear, specific, ends with a question mark." },
+          context: { type: "string", description: "Shown to the user above the question. What they need to answer without reading anything else: what you found and exactly which items the question is about, by name or ID (list them when there are several). 1–6 short lines, markdown list allowed. Required unless `credential` is set." },
           header: { type: "string", description: "1–3 plain words naming the topic (e.g. \"Deploy target\"), max 12 chars; never an ID, ticket or code." },
           options: {
             type: "array",
@@ -135,8 +141,8 @@ const DESCRIPTION =
   `meaningfully different trade-offs, missing context you cannot discover from ` +
   `the codebase, or risky/irreversible choices. ` +
   `Before calling, write 2–4 short lines in your reply: what you found, why you need a decision, and which option you recommend. ` +
-  `Present 1-4 questions, each with ` +
-  `2-4 distinct options. Put your recommended option first and append ` +
+  `Present 1-4 questions, each with its \`context\` and ` +
+  `2-4 distinct options. The user may read only the context, the question and the options, so the context must name what the question is about. Put your recommended option first and append ` +
   `'(Recommended)' to its label. Set multi_select: true when choices are ` +
   `combinable. The user can always answer with free text instead of picking an ` +
   `option, so never add an 'Other' or 'Something else' option. Batch related ` +
@@ -201,6 +207,14 @@ export class AskUserTool implements Tool<AskUserInput> {
       if (typeof qObj.header !== "string" || qObj.header.trim() === "") {
         throw new ToolExecutionError(`questions[${qi}].header must be a non-empty string`, { tool_name: this.name });
       }
+      // The host shows only context, question and options; without context "these 5 items" names nothing.
+      const context = typeof qObj.context === "string" ? qObj.context.trim() : "";
+      if (!credential && !context) {
+        throw new ToolExecutionError(
+          `questions[${qi}].context is required: what you found and exactly which items the question is about, by name or ID`,
+          { tool_name: this.name },
+        );
+      }
       if (qObj.header.length > 12) {
         throw new ToolExecutionError(`questions[${qi}].header must be at most 12 characters`, { tool_name: this.name });
       }
@@ -221,6 +235,7 @@ export class AskUserTool implements Tool<AskUserInput> {
 
       return {
         question: qObj.question,
+        ...(context ? { context } : {}),
         header: qObj.header,
         options,
         multi_select,

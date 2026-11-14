@@ -20,6 +20,7 @@ function makeCtx(signal?: AbortSignal): ToolContext {
 const SINGLE_Q = {
   question: "Which backend should we use?",
   header: "Backend",
+  context: "The cache has no storage backend yet.",
   options: [
     { label: "SQLite", description: "Embedded, no server" },
     { label: "PostgreSQL", description: "Full relational DB" },
@@ -37,7 +38,7 @@ function makeTool(handler: AskUserHandler): AskUserTool {
 describe("AskUserTool.validate()", () => {
   test("accepts a minimal valid input", () => {
     const tool = makeTool(async () => ({ answers: [{ selected: ["SQLite"] }] }));
-    const input = tool.validate({ questions: [{ question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] }] });
+    const input = tool.validate({ questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] }] });
     expect(input.questions).toHaveLength(1);
     expect(input.questions[0]!.multi_select).toBe(false);
   });
@@ -45,7 +46,7 @@ describe("AskUserTool.validate()", () => {
   test("defaults multi_select to false", () => {
     const tool = makeTool(async () => ({ answers: [{ selected: ["A"] }] }));
     const raw = {
-      questions: [{ question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] }],
+      questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] }],
     };
     const input = tool.validate(raw);
     expect(input.questions[0]!.multi_select).toBe(false);
@@ -54,7 +55,7 @@ describe("AskUserTool.validate()", () => {
   test("preserves explicit multi_select: true", () => {
     const tool = makeTool(async () => ({ answers: [{ selected: ["A", "B"] }] }));
     const raw = {
-      questions: [{ question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }], multi_select: true }],
+      questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }], multi_select: true }],
     };
     const input = tool.validate(raw);
     expect(input.questions[0]!.multi_select).toBe(true);
@@ -67,14 +68,14 @@ describe("AskUserTool.validate()", () => {
 
   test("rejects 5 questions", () => {
     const tool = makeTool(async () => ({ declined: true }));
-    const q = { question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] };
+    const q = { question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] };
     expect(() => tool.validate({ questions: [q, q, q, q, q] })).toThrow(ToolExecutionError);
   });
 
   test("rejects empty question string", () => {
     const tool = makeTool(async () => ({ declined: true }));
     expect(() =>
-      tool.validate({ questions: [{ question: "", header: "H", options: [{ label: "A" }, { label: "B" }] }] }),
+      tool.validate({ questions: [{ question: "", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] }] }),
     ).toThrow(ToolExecutionError);
   });
 
@@ -95,7 +96,7 @@ describe("AskUserTool.validate()", () => {
   test("accepts header of exactly 12 chars", () => {
     const tool = makeTool(async () => ({ declined: true }));
     const input = tool.validate({
-      questions: [{ question: "Q?", header: "123456789012", options: [{ label: "A" }, { label: "B" }] }],
+      questions: [{ question: "Q?", header: "123456789012", context: "Why.", options: [{ label: "A" }, { label: "B" }] }],
     });
     expect(input.questions[0]!.header).toBe("123456789012");
   });
@@ -103,7 +104,7 @@ describe("AskUserTool.validate()", () => {
   test("rejects 1 option (needs 2–4)", () => {
     const tool = makeTool(async () => ({ declined: true }));
     expect(() =>
-      tool.validate({ questions: [{ question: "Q?", header: "H", options: [{ label: "A" }] }] }),
+      tool.validate({ questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }] }] }),
     ).toThrow(ToolExecutionError);
   });
 
@@ -111,27 +112,27 @@ describe("AskUserTool.validate()", () => {
     const tool = makeTool(async () => ({ declined: true }));
     const opts = [{ label: "A" }, { label: "B" }, { label: "C" }, { label: "D" }, { label: "E" }];
     expect(() =>
-      tool.validate({ questions: [{ question: "Q?", header: "H", options: opts }] }),
+      tool.validate({ questions: [{ question: "Q?", header: "H", context: "Why.", options: opts }] }),
     ).toThrow(ToolExecutionError);
   });
 
   test("rejects duplicate option labels", () => {
     const tool = makeTool(async () => ({ declined: true }));
     expect(() =>
-      tool.validate({ questions: [{ question: "Q?", header: "H", options: [{ label: "A" }, { label: "A" }] }] }),
+      tool.validate({ questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "A" }] }] }),
     ).toThrow(ToolExecutionError);
   });
 
   test("rejects empty option label", () => {
     const tool = makeTool(async () => ({ declined: true }));
     expect(() =>
-      tool.validate({ questions: [{ question: "Q?", header: "H", options: [{ label: "" }, { label: "B" }] }] }),
+      tool.validate({ questions: [{ question: "Q?", header: "H", context: "Why.", options: [{ label: "" }, { label: "B" }] }] }),
     ).toThrow(ToolExecutionError);
   });
 
   test("accepts 4 questions (max)", () => {
     const tool = makeTool(async () => ({ declined: true }));
-    const q = { question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] };
+    const q = { question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] };
     const input = tool.validate({ questions: [q, q, q, q] });
     expect(input.questions).toHaveLength(4);
   });
@@ -143,13 +144,14 @@ describe("AskUserTool.validate()", () => {
 describe("AskUserTool.summarize()", () => {
   test("single question", () => {
     const tool = makeTool(async () => ({ declined: true }));
-    const input = tool.validate({ questions: [{ question: "Which backend?", header: "Backend", options: [{ label: "A" }, { label: "B" }] }] });
+    const input = tool.validate({ questions: [{ question: "Which backend?", header: "Backend",
+  context: "The cache has no storage backend yet.", options: [{ label: "A" }, { label: "B" }] }] });
     expect(tool.summarize(input)).toBe('Ask user: "Which backend?"');
   });
 
   test("multiple questions appends count", () => {
     const tool = makeTool(async () => ({ declined: true }));
-    const q = { question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] };
+    const q = { question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] };
     const input = tool.validate({ questions: [q, q, q] });
     expect(tool.summarize(input)).toBe('Ask user: "Q?" (+2 more)');
   });
@@ -157,7 +159,7 @@ describe("AskUserTool.summarize()", () => {
   test("truncates long first question to 60 chars", () => {
     const tool = makeTool(async () => ({ declined: true }));
     const longQ = "A".repeat(70) + "?";
-    const input = tool.validate({ questions: [{ question: longQ, header: "H", options: [{ label: "A" }, { label: "B" }] }] });
+    const input = tool.validate({ questions: [{ question: longQ, header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] }] });
     const summary = tool.summarize(input);
     // 60 chars + ellipsis
     expect(summary).toContain("…");
@@ -184,7 +186,7 @@ describe("AskUserTool.execute() — answers", () => {
   });
 
   test("renders multi-select answer with comma join", async () => {
-    const q = { question: "Platforms?", header: "Platforms", options: [{ label: "macOS" }, { label: "Linux" }, { label: "Windows" }], multi_select: true };
+    const q = { question: "Platforms?", header: "Platforms", context: "Why.", options: [{ label: "macOS" }, { label: "Linux" }, { label: "Windows" }], multi_select: true };
     const handler: AskUserHandler = async () => ({ answers: [{ selected: ["macOS", "Linux"] }] });
     const tool = makeTool(handler);
     const input = tool.validate({ questions: [q] });
@@ -214,7 +216,7 @@ describe("AskUserTool.execute() — answers", () => {
   });
 
   test("summary pluralises for multiple questions", async () => {
-    const q = { question: "Q?", header: "H", options: [{ label: "A" }, { label: "B" }] };
+    const q = { question: "Q?", header: "H", context: "Why.", options: [{ label: "A" }, { label: "B" }] };
     const handler: AskUserHandler = async () => ({
       answers: [{ selected: ["A"] }, { selected: ["B"] }],
     });
@@ -582,7 +584,7 @@ describe("AskUserTool credential questions", () => {
   });
 
   test("a plain question still needs 2-4 options", () => {
-    invalid({ questions: [{ question: "Q?", header: "H" }] }, /options must be an array of 2–4 entries/);
+    invalid({ questions: [{ question: "Q?", header: "H", context: "Why." }] }, /options must be an array of 2–4 entries/);
   });
 
   test("schema describes credential, never says password, and no longer requires options", () => {
@@ -613,5 +615,25 @@ describe("AskUserTool credential questions", () => {
     });
     await credTool.execute(credTool.validate({ questions: [credQ({}, { request_id: "r1" })] }), makeCtx());
     expect(seen).toEqual({ ...cred });
+  });
+});
+
+describe("AskUserTool question context", () => {
+  const tool = new AskUserTool(async () => ({ declined: true }));
+  const plain = { question: "Move the 5 Review tasks to Done?", header: "Tasks", options: [{ label: "Yes" }, { label: "No" }] };
+
+  test("a plain question without context is rejected", () => {
+    expect(() => tool.validate({ questions: [plain] })).toThrow(/context is required/);
+    expect(() => tool.validate({ questions: [{ ...plain, context: "  " }] })).toThrow(/context is required/);
+  });
+
+  test("context is kept, trimmed, for the host to show", () => {
+    const out = tool.validate({ questions: [{ ...plain, context: " RMT2-101, RMT2-104 " }] });
+    expect(out.questions[0]!.context).toBe("RMT2-101, RMT2-104");
+  });
+
+  test("a credential question needs no context", () => {
+    const out = tool.validate({ questions: [{ question: "Key?", header: "Key", credential: { host: "api.openai.com", purpose: "Call the API" } }] });
+    expect(out.questions[0]!.context).toBeUndefined();
   });
 });

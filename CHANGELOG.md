@@ -2,6 +2,14 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## Unreleased
+
+### Changed
+
+- **Breaking for models, not hosts:** every `AskUser` question except a credential question must carry
+  `context` (what was found and which items the question is about). `validate()` rejects a call without it
+  and passes the trimmed text to the host as `AskUserQuestion.context`, to be shown above the question.
+
 ## [0.5.5] — 2026-11-04
 
 ### Changed

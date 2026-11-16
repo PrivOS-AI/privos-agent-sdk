@@ -2,7 +2,7 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
-## Unreleased
+## [0.6.0] — 2026-11-16
 
 ### Added
 

@@ -26,7 +26,7 @@ export type { Task, TaskStatus, CreateTaskInput, TaskPatch } from "../sessions/t
 export { AskUserTool } from "./ask-user.js";
 export type {
   AskUserHandler, AskUserRequest, AskUserResponse, AskUserAnswer,
-  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential,
+  AskUserInput, AskUserQuestion, AskUserOption, AskUserCredential, AskUserAuthType,
 } from "./ask-user.js";
 
 // MCP client support.

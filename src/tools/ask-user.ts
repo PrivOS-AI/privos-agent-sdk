@@ -16,6 +16,8 @@ export interface AskUserOption {
  * ever flows back through this tool. The host maps these snake_case names to
  * its own and decides the (value-free) answer text.
  */
+export type AskUserAuthType = "bearer" | "basic" | "header" | "query";
+
 export interface AskUserCredential {
   /** Lowercase host the key is for, e.g. "api.openai.com". A leading "*." is allowed. */
   host: string;
@@ -30,6 +32,15 @@ export interface AskUserCredential {
   /** true: the stored key for this host no longer works; ask for a new value. */
   rotate?: boolean;
   /**
+   * How the API takes the key; the host's form opens on this choice. "bearer" (default):
+   * Authorization: Bearer; "basic": a login pair the user types in the form, sent as Authorization: Basic;
+   * "header": a custom header named auth_name (default x-api-key); "query": a query
+   * parameter named auth_name.
+   */
+  auth_type?: AskUserAuthType;
+  /** Header name for auth_type "header", query parameter name for "query" (required there). */
+  auth_name?: string;
+  /**
    * Set by the host on its own copy of the question to correlate a pending
    * request. validate() never copies it from model input.
    */
@@ -39,6 +50,11 @@ export interface AskUserCredential {
 export interface AskUserQuestion {
   /** The complete question, e.g. "Which storage backend should the cache use?" */
   question: string;
+  /**
+   * What the user needs to answer without reading anything else: what was found and which items the
+   * question is about. Hosts show it above the question. Absent only on a credential question.
+   */
+  context?: string;
   /** Short chip/tag label for UIs, max 12 characters, e.g. "Backend". */
   header: string;
   /** 2–4 distinct choices. Empty when `credential` is set. */
@@ -74,8 +90,11 @@ export type AskUserResponse =
 /** A `credential` object whose every value is empty: no host, no purpose, nothing else set. */
 export function isBlankCredential(raw: unknown): boolean {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return false;
-  return Object.values(raw as Record<string, unknown>).every(
-    (v) => v == null || v === false || (typeof v === "string" && v.trim() === ""),
+  // "bearer" is the default auth type, so a schema-filling model's "bearer" says nothing either.
+  return Object.entries(raw as Record<string, unknown>).every(
+    ([k, v]) =>
+      v == null || v === false || (typeof v === "string" && v.trim() === "") ||
+      ((k === "auth_type" || k === "authType") && v === "bearer"),
   );
 }
 
@@ -94,6 +113,7 @@ const SCHEMA = {
         type: "object",
         properties: {
           question: { type: "string", description: "The complete question to ask. Clear, specific, ends with a question mark." },
+          context: { type: "string", description: "Shown to the user above the question. What they need to answer without reading anything else: what you found and exactly which items the question is about, by name or ID (list them when there are several). 1–6 short lines, markdown list allowed. Required unless `credential` is set." },
           header: { type: "string", description: "1–3 plain words naming the topic (e.g. \"Deploy target\"), max 12 chars; never an ID, ticket or code." },
           options: {
             type: "array",
@@ -118,6 +138,13 @@ const SCHEMA = {
               env_name: { type: "string", description: "Env var name for the key, e.g. 'OPENAI_API_KEY'." },
               base_url_env_name: { type: "string", description: "Env var name for the base URL, e.g. 'OPENAI_BASE_URL'." },
               rotate: { type: "boolean", description: "true when the stored key for this host was rejected and a new one is needed." },
+              auth_type: {
+                type: "string",
+                enum: ["bearer", "basic", "header", "query"],
+                description:
+                  "How the API takes the key: bearer (default), basic (login pair the user types in the form, sent as Authorization: Basic, e.g. DataForSEO), header (custom header named auth_name, default x-api-key), query (query parameter named auth_name).",
+              },
+              auth_name: { type: "string", description: "Header name for auth_type 'header', query parameter name for 'query' (required there)." },
             },
             required: ["host", "purpose"],
           },
@@ -135,8 +162,8 @@ const DESCRIPTION =
   `meaningfully different trade-offs, missing context you cannot discover from ` +
   `the codebase, or risky/irreversible choices. ` +
   `Before calling, write 2–4 short lines in your reply: what you found, why you need a decision, and which option you recommend. ` +
-  `Present 1-4 questions, each with ` +
-  `2-4 distinct options. Put your recommended option first and append ` +
+  `Present 1-4 questions, each with its \`context\` and ` +
+  `2-4 distinct options. The user may read only the context, the question and the options, so the context must name what the question is about. Put your recommended option first and append ` +
   `'(Recommended)' to its label. Set multi_select: true when choices are ` +
   `combinable. The user can always answer with free text instead of picking an ` +
   `option, so never add an 'Other' or 'Something else' option. Batch related ` +
@@ -159,7 +186,13 @@ const CAMEL_CREDENTIAL_FIELDS = [
   ["pathPrefix", "path_prefix"],
   ["envName", "env_name"],
   ["baseUrlEnvName", "base_url_env_name"],
+  ["authType", "auth_type"],
+  ["authName", "auth_name"],
 ] as const;
+
+const AUTH_TYPES: readonly AskUserAuthType[] = ["bearer", "basic", "header", "query"];
+const AUTH_HEADER_NAME_RE = /^[A-Za-z][A-Za-z0-9-]{0,63}$/;
+const AUTH_QUERY_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
 
 export class AskUserTool implements Tool<AskUserInput> {
   readonly name = "AskUser";
@@ -201,6 +234,14 @@ export class AskUserTool implements Tool<AskUserInput> {
       if (typeof qObj.header !== "string" || qObj.header.trim() === "") {
         throw new ToolExecutionError(`questions[${qi}].header must be a non-empty string`, { tool_name: this.name });
       }
+      // The host shows only context, question and options; without context "these 5 items" names nothing.
+      const context = typeof qObj.context === "string" ? qObj.context.trim() : "";
+      if (!credential && !context) {
+        throw new ToolExecutionError(
+          `questions[${qi}].context is required: what you found and exactly which items the question is about, by name or ID`,
+          { tool_name: this.name },
+        );
+      }
       if (qObj.header.length > 12) {
         throw new ToolExecutionError(`questions[${qi}].header must be at most 12 characters`, { tool_name: this.name });
       }
@@ -221,6 +262,7 @@ export class AskUserTool implements Tool<AskUserInput> {
 
       return {
         question: qObj.question,
+        ...(context ? { context } : {}),
         header: qObj.header,
         options,
         multi_select,
@@ -290,12 +332,23 @@ export class AskUserTool implements Tool<AskUserInput> {
       }
     }
     if (c.rotate !== undefined && typeof c.rotate !== "boolean") return fail(".rotate must be a boolean");
+    if (c.auth_type !== undefined && !AUTH_TYPES.includes(c.auth_type as AskUserAuthType)) {
+      return fail(`.auth_type must be one of ${AUTH_TYPES.join(", ")}`);
+    }
+    if (c.auth_name !== undefined) {
+      const re = c.auth_type === "query" ? AUTH_QUERY_NAME_RE : AUTH_HEADER_NAME_RE;
+      if (typeof c.auth_name !== "string" || !re.test(c.auth_name)) return fail(`.auth_name must match ${re.source}`);
+    }
+    if (c.auth_type === "query" && c.auth_name === undefined) return fail(".auth_name is required when auth_type is 'query'");
 
     const out: AskUserCredential = { host: c.host, purpose: c.purpose };
     if (c.path_prefix !== undefined) out.path_prefix = c.path_prefix as string;
     if (c.env_name !== undefined) out.env_name = c.env_name as string;
     if (c.base_url_env_name !== undefined) out.base_url_env_name = c.base_url_env_name as string;
     if (c.rotate !== undefined) out.rotate = c.rotate as boolean;
+    if (c.auth_type !== undefined) out.auth_type = c.auth_type as AskUserAuthType;
+    // A name only means something for a header or query key.
+    if (c.auth_name !== undefined && (c.auth_type === "header" || c.auth_type === "query")) out.auth_name = c.auth_name as string;
     return out;
   }
 

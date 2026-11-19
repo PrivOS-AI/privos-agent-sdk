@@ -485,8 +485,10 @@ export async function* runLoop(
         const { assistantMessage, stopReason, usage } =
           yield* streamTurnWithContextRetry(si, ai, opts, signal, selected);
 
-        // Persist + emit assistant message
-        await si.append([assistantMessage]);
+        // Persist + emit assistant message. An empty one (no content at all) is
+        // not persisted: providers reject an empty assistant turn on replay, and
+        // each failed call would otherwise grow the session it failed on.
+        if (assistantMessage.content.length > 0) await si.append([assistantMessage]);
         yield { type: "assistant", message: assistantMessage, stop_reason: stopReason };
 
         totalUsage = addUsage(totalUsage, usage);

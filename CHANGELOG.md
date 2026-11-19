@@ -2,6 +2,19 @@
 
 All notable changes to `@privos_ai/privos-agent-sdk` are documented here.
 
+## [0.6.1] — 2026-11-19
+
+### Fixed
+
+- An Anthropic-compatible gateway (Z.ai GLM) refuses an oversized prompt with HTTP 200 and
+  `stop_reason: model_context_window_exceeded` instead of a 400. That stop reason now raises
+  `ContextLengthError`, so the loop compacts once and retries the turn; before, it ended the run as
+  `stop_reason: "error"` and every later run on the session failed the same way.
+- When the older part of a session is itself too large to summarize, the default compaction drops it
+  (keeping the last 10 turns and a note) instead of failing.
+- An assistant message with no content is no longer persisted. Each failed call used to append one to
+  the session it failed on, and providers reject an empty assistant turn on replay.
+
 ## [0.6.0] — 2026-11-16
 
 ### Added

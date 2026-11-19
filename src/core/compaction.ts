@@ -6,6 +6,7 @@ import type { SessionInternal } from "./session.js";
 import type { AgentInternal } from "./agent.js";
 import type { CompactionEvent } from "./events.js";
 import { resolveOutputTokenBudget, resolveTurnModel, type TurnModel } from "./model-config.js";
+import { ContextLengthError } from "./errors.js";
 
 export interface CompactionContext {
   messages: Message[];
@@ -153,8 +154,17 @@ export const defaultCompaction: CompactionStrategy = {
     if (older.length === 0) return messages;
 
     const budget = resolveOutputTokenBudget(4096, maxOutputTokens, contextWindow)!;
-    const { text: summaryText, usage } = await summarizeWithProvider(provider, model, older, signal, budget);
-    if (usageReport) usageReport.usage = usage;
+    let summaryText: string;
+    try {
+      const summary = await summarizeWithProvider(provider, model, older, signal, budget);
+      summaryText = summary.text;
+      if (usageReport) usageReport.usage = summary.usage;
+    } catch (err) {
+      // The older part alone no longer fits the window, so it cannot be
+      // summarized either. Drop it rather than fail every later run.
+      if (!(err instanceof ContextLengthError)) throw err;
+      summaryText = `${older.length} earlier messages were dropped: they exceeded the model's context window and could not be summarized.`;
+    }
 
     const summaryMessage: Message = {
       role: "user",

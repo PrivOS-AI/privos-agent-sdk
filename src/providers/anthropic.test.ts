@@ -441,6 +441,15 @@ describe("mapAnthropicError", () => {
 });
 
 describe("mapWireEvents", () => {
+  it("turns a model_context_window_exceeded stop into ContextLengthError", async () => {
+    const events: unknown[] = [
+      { type: "message_start", message: { id: "m1", usage: { input_tokens: 0, output_tokens: 0 } } },
+      { type: "message_delta", delta: { stop_reason: "model_context_window_exceeded" }, usage: { output_tokens: 0 } },
+      { type: "message_stop" },
+    ];
+    await expect(collect(mapWireEvents(fromArray(events), "glm-5.3"))).rejects.toBeInstanceOf(ContextLengthError);
+  });
+
   it("emits start, text, tool_use bracket, end with usage", async () => {
     const events: unknown[] = [
       {

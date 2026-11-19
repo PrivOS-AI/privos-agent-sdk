@@ -984,3 +984,55 @@ describe("runLoop — ContextLengthError recovery emits CompactionEvent", () => 
     await agent.close();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Context overflow recovery
+// ---------------------------------------------------------------------------
+
+describe("context overflow recovery", () => {
+  it("drops the older part when it is too large to summarize", async () => {
+    const { ContextLengthError } = await import("./errors.js");
+    const provider = new MockProvider();
+    provider.enqueue({ events: [], throwBefore: new ContextLengthError("too long") });
+    const msgs = buildHistory(15);
+    const result = await defaultCompaction.compact({
+      messages: msgs,
+      provider,
+      model: "test-model",
+      signal: new AbortController().signal,
+    });
+    const recent = lastNTurnBoundaries(msgs, 10);
+    expect(result.length).toBe(1 + recent.length);
+    const head = result[0]!.content[0] as { text: string };
+    expect(head.text).toContain("earlier messages were dropped");
+  });
+
+  it("still fails on a summary error that is not an overflow", async () => {
+    const { ProviderError } = await import("./errors.js");
+    const provider = new MockProvider();
+    provider.enqueue({ events: [], throwBefore: new ProviderError("boom", { retryable: false }) });
+    await expect(defaultCompaction.compact({
+      messages: buildHistory(15),
+      provider,
+      model: "test-model",
+      signal: new AbortController().signal,
+    })).rejects.toThrow("boom");
+  });
+
+  it("does not persist an empty assistant message", async () => {
+    const provider = new MockProvider();
+    provider.enqueue({
+      events: [
+        { type: "message_start", model: "test-model" },
+        { type: "message_end", stop_reason: "error", usage: { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 } },
+      ],
+    });
+    const { agent } = makeAgent(provider);
+    const sess = await agent.session();
+    for await (const _ of sess.run("hi")) { /* drain */ }
+    const si = getSessionInternals(sess);
+    expect(si.fullHistory.map((m) => m.role)).toEqual(["user"]);
+    expect(si.providerView.some((m) => m.role === "assistant")).toBe(false);
+    await agent.close();
+  });
+});

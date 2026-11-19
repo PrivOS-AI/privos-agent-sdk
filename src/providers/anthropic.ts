@@ -616,6 +616,12 @@ export async function* mapWireEvents(
           usage?: WireUsage;
         };
         if (e.delta?.stop_reason !== undefined && e.delta.stop_reason !== null) {
+          // Anthropic-compatible gateways (Z.ai GLM) refuse an oversized prompt
+          // with HTTP 200 and this stop reason instead of a 400; surface it as
+          // the overflow it is so the loop compacts and retries.
+          if (e.delta.stop_reason === "model_context_window_exceeded") {
+            throw new ContextLengthError("model context window exceeded (stop_reason=model_context_window_exceeded)");
+          }
           stopReason = mapStopReason(e.delta.stop_reason);
           sawTerminal = true;
         }
